@@ -19,21 +19,47 @@ ROT_90_EDGE_MAP = {
     'r': 'u'
 }
 
-ROT_180_EDGE_MAP = {
+OPP_EDGES_MAP = {
     'u': 'd',
     'd': 'u',
     'l': 'r',
     'r': 'l'
 }
 
+EDGE_OPNS = {
+    'u': [-1, 0],
+    'd': [1, 0],
+    'l': [0, -1],
+    'r': [0, 1],
+}
+
     
-shapes = {
-    'l-left': [ [0,0], [1,0], [1,1], [1,2] ],
-    'l-right': [ [0,2], [1,0], [1,1], [1,2] ],
-    't': [ [0,1], [1,0], [1,1], [1,2] ],
-    'z-left': [ [0,0], [0,1], [1,1], [1,2] ],
-    'z-right': [ [0,1], [0,2], [1,0], [1,1] ],
-    # 'square': [ [0,0], [0,1], [1,0], [1,1] ]
+SHAPES = {
+    'l-left': {
+        'name': 'l-left',
+        'coords': [ [0,0], [1,0], [1,1], [1,2] ],
+        'rare': 0
+    },
+    'l-right': {
+        'name': 'l-right',
+        'coords': [ [0,2], [1,0], [1,1], [1,2] ],
+        'rare': 0
+    },
+    't': {
+        'name': 't',
+        'coords': [ [0,1], [1,0], [1,1], [1,2] ],
+        'rare': 1
+    },
+    'z-left': {
+        'name': 'z-left',
+        'coords': [ [0,0], [0,1], [1,1], [1,2] ],
+        'rare': 1
+    },
+    'z-right': {
+        'name': 'z-right',
+        'coords': [ [0,1], [0,2], [1,0], [1,1] ],
+        'rare': 1
+    }
 }
 
 pattern1 = [ [0,0], [0,1], [0,2], [0,3], [1,0], [1,3], [2,0], [2,3] ]
@@ -52,21 +78,24 @@ windowable_pattern1 = [
            [4,1]
 ]
 
-def get_shape_scores_window(window_grid):
+def get_shape_scores_window(window_grid, shapes=SHAPES.values()):
     all_scores = []
     
-    for s in shapes:
-        score = is_shape_inside_window(get_coords_from_grid(window_grid), shapes[s])
-        shape_grid = gen_obj_grid(shapes[s])
+    for shape in shapes:
+        name = shape['name']
+        coords = shape['coords']
+        score = is_shape_inside_window(get_coords_from_grid(window_grid), coords)
+        shape_grid = gen_obj_grid(coords)
         
         if score:
-            # print(s)
-#             print_pattern(shapes[s])
+            # print(name)
+#             print_pattern(coords)
             
             edge_score = calc_edges_score(window_grid, shape_grid)
             
-            edge_score['shape'] = s
+            edge_score['shape'] = name
             edge_score['rot'] = 0
+            edge_score['rare'] = shape['rare']
             
             all_scores.append(edge_score)
         
@@ -78,8 +107,10 @@ def get_shape_scores_window(window_grid):
             # print_pattern(get_coords_from_grid(rotated_180_shape_grid))
         
             edge_score = calc_edges_score(window_grid, rotated_180_shape_grid)
-            edge_score['shape'] = s
+            edge_score['shape'] = name
             edge_score['rot'] = 1
+            edge_score['rare'] = shape['rare']
+            
             all_scores.append(edge_score)
             
     return all_scores
@@ -114,14 +145,19 @@ def calc_edges_score(window_grid, shape_grid):
                         
                         matched_edges_count += len(common_edges)
                         
-                    
+              
+    w_match = matched_edges_count/window_edges_count 
+    s_match = matched_edges_count/shape_edges_count   
+      
     return {
         'SE': shape_edges_count,
         'WE': window_edges_count,
         'ME': matched_edges_count,
         
-        'W_MATCH': matched_edges_count/window_edges_count,
-        'S_MATCH': matched_edges_count/shape_edges_count,
+        'W_MATCH': w_match,
+        'S_MATCH': s_match,
+        
+        'W_X_S': w_match * s_match,
         
         'common_edges': common_edges_list
     }
@@ -317,7 +353,7 @@ def get_180_rotated(patt):
             b = copy.copy(patt[i][j])
             if b:
                 b['coord'] = [ir, jr]
-                b['edges'] = [ROT_180_EDGE_MAP[e] for e in b['edges']]
+                b['edges'] = [OPP_EDGES_MAP[e] for e in b['edges']]
             row.append(b)
             jr += 1
 
@@ -328,28 +364,29 @@ def get_180_rotated(patt):
     
 
 def get_x_direction_windows(patt):
-  
     l = len(patt[0])
     h = len(patt)
     
     # [0, 0], [0, 1]
     # [3, 0], [3, 1]
-    w_size = HORI_WINDOW_SIZE #
+    w_size = HORI_WINDOW_SIZE 
   
     wl, wh = w_size
   
-    c_range = range(l - wl + 1) #
+    c_range = range(l - wl + 1) 
     offset_c = h - wh
   
     start_coords = [[0, c] for c in c_range]
     end_coords = [[offset_c, c] for c in c_range]
+    
+    # TODO: shift window down if >= half empty
   
     windows = [get_window(patt, c, w_size) for c in start_coords + end_coords]
 
     return windows
 
 
-def get_all_windows_scores(patt):
+def get_all_windows_scores_for_shapes(patt, shapes):
     rotated_patt = get_90_rotated(patt)
     
     print("ROTATED_PATT")
@@ -367,7 +404,7 @@ def get_all_windows_scores(patt):
         # print("--------WINDOW")
         # print_pattern(get_coords_from_grid(win))
         
-        scores = get_shape_scores_window(win)
+        scores = get_shape_scores_window(win, shapes)
         
         if scores:
             score = sorted(scores, key=lambda x: x['W_MATCH'], reverse=True)[0]
@@ -380,25 +417,85 @@ def get_all_windows_scores(patt):
         # print("--------WINDOW")
         # print_pattern(get_coords_from_grid(win))
         
-        scores = get_shape_scores_window(win)
+        scores = get_shape_scores_window(win, shapes)
         if scores:
             score = sorted(scores, key=lambda x: x['W_MATCH'], reverse=True)[0]
             window_scores.append(['rot', w['coord'], score])
     
     return window_scores
     
+def fill_piece(patt, coord, shape, rotate=False):
+    shape = SHAPES[shape]
+    print(shape)
+    shape_grid = gen_obj_grid(shape['coords'])
+    if rotate:
+        shape_grid = get_180_rotated(shape_grid)
+        
+    l = len(patt[0])
+    h = len(patt)
+        
+    for row in shape_grid:
+        for block in row:
+            
+            if block:
+                curr_coord = [block['coord'][0] + coord[0], block['coord'][1] + coord[1]]
+                patt[curr_coord[0]][curr_coord[1]] = None
+                edges = block['edges'] or []
+                
+                for e in edges:
+                    opn = EDGE_OPNS[e]
+                    y = curr_coord[0] + opn[0]
+                    x = curr_coord[1] + opn[1]
+                    
+                    if y >=0 and x >= 0 and y < h and x < l:
+                        neighbour = patt[y][x]
+                        if neighbour:
+                            opp_edge = OPP_EDGES_MAP[e]
+                            if neighbour['edges']:
+                                neighbour['edges'].append(opp_edge)
+                            else:
+                                neighbour['edges'] = [opp_edge]
+       
+    # TODO: Keep rotating and trimming     
+    # and return a pair of plain and rotated versions
+    # they'll also be the ones at the start of the loop cycle                
+    shortened_pair = [patt]
+                            
+    return shortened_pair
     
-def solve(patt, shapes_set):
-    pass
+    
+def solve(patt_values, shapes_set=None):
+    shapes = SHAPES.values()
+    if shapes_set:
+        shapes = [s for s in SHAPES if s['name'] in shapes_set]
+
+    values = patt_values[:]
+    
+    # current_hole = [1]
+    
+    # while current_hole:
+    obj_grid = gen_obj_grid(values)
+
+    print_pattern(get_coords_from_grid(obj_grid))
+    scores = get_all_windows_scores_for_shapes(obj_grid, shapes)
+    scores = sorted(scores, key=lambda x: x[2]['W_X_S'], reverse=True)
+    for score in scores:
+        print(score)
+    
+    this_run_piece = scores[0]
+    
+    import copy
+    # TODO: based on which one: plain or rot
+    patt_clone = copy.copy(obj_grid)
+    
+    print(this_run_piece[2]['shape'])
+
+    current_hole = fill_piece(patt_clone, this_run_piece[1], this_run_piece[2]['shape'], this_run_piece[2]['rot'])
+    
+    print_pattern(get_coords_from_grid(current_hole[0]))
+    print(current_hole[0])
+        
 
 
-print("PATT")
-obj_grid = gen_obj_grid(windowable_pattern1)
-print_pattern(get_coords_from_grid(obj_grid))
-scores = get_all_windows_scores(obj_grid)
-for score in scores:
-    print(score)
-
-
-
+solve(windowable_pattern1, [])
 
