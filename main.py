@@ -426,13 +426,10 @@ def get_all_windows_scores_for_shapes(patt, shapes):
     
 def fill_piece(patt, coord, shape, rotate=False):
     shape = SHAPES[shape]
-    print(shape)
+
     shape_grid = gen_obj_grid(shape['coords'])
     if rotate:
         shape_grid = get_180_rotated(shape_grid)
-        
-    l = len(patt[0])
-    h = len(patt)
         
     for row in shape_grid:
         for block in row:
@@ -442,26 +439,47 @@ def fill_piece(patt, coord, shape, rotate=False):
                 patt[curr_coord[0]][curr_coord[1]] = None
                 edges = block['edges'] or []
                 
-                for e in edges:
-                    opn = EDGE_OPNS[e]
-                    y = curr_coord[0] + opn[0]
-                    x = curr_coord[1] + opn[1]
+                transfer_edges(patt, edges, curr_coord)
+
+    return patt
+    
+
+def transfer_edges(patt, edges, curr_coord):
+    """
+        MUTATEs Pattern
+    """
+    l = len(patt[0])
+    h = len(patt)
+    for e in edges:
+        opn = EDGE_OPNS[e]
+        y = curr_coord[0] + opn[0]
+        x = curr_coord[1] + opn[1]
+        
+        if y >=0 and x >= 0 and y < h and x < l:
+            neighbour = patt[y][x]
+            if neighbour:
+                opp_edge = OPP_EDGES_MAP[e]
+                if neighbour['edges']:
+                    neighbour['edges'].append(opp_edge)
+                else:
+                    neighbour['edges'] = [opp_edge]
                     
-                    if y >=0 and x >= 0 and y < h and x < l:
-                        neighbour = patt[y][x]
-                        if neighbour:
-                            opp_edge = OPP_EDGES_MAP[e]
-                            if neighbour['edges']:
-                                neighbour['edges'].append(opp_edge)
-                            else:
-                                neighbour['edges'] = [opp_edge]
-       
-    # TODO: Keep rotating and trimming     
-    # and return a pair of plain and rotated versions
-    # they'll also be the ones at the start of the loop cycle                
-    shortened_pair = [patt]
-                            
-    return shortened_pair
+                    
+def get_trimmed_pattern(patt):
+    current_patt = []
+    
+    for row in patt:
+        if not all(x == None for x in row):
+            current_patt.append(row)
+    
+    rotated = get_180_rotated(current_patt)
+    
+    current_patt = []
+    for row in rotated:
+        if not all(x == None for x in row):
+            current_patt.append(row)
+            
+    return current_patt
     
     
 def solve(patt_values, shapes_set=None):
@@ -492,8 +510,10 @@ def solve(patt_values, shapes_set=None):
 
     current_hole = fill_piece(patt_clone, this_run_piece[1], this_run_piece[2]['shape'], this_run_piece[2]['rot'])
     
-    print_pattern(get_coords_from_grid(current_hole[0]))
-    print(current_hole[0])
+    current_hole = get_trimmed_pattern(current_hole)
+    
+    print_pattern(get_coords_from_grid(current_hole))
+    print(current_hole)
         
 
 
