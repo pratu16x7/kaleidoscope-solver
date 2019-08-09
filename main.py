@@ -386,43 +386,78 @@ def get_x_direction_windows(patt):
     return windows
 
 
-def get_all_windows_scores_for_shapes(patt, shapes):
-    rotated_patt = get_90_rotated(patt)
-    
-    print("ROTATED_PATT")
-    print_pattern(get_coords_from_grid(rotated_patt))
-    
+def get_all_options(patt, shapes):
+    options = []
     patt_windows = get_x_direction_windows(patt)
-    rot_patt_windows = get_x_direction_windows(rotated_patt)
     
-    window_scores = []
-    
-    # print("-------------------------PATT WINDOW SCORES")
     for w in patt_windows:
         win = w['grid']
         
-        # print("--------WINDOW")
-        # print_pattern(get_coords_from_grid(win))
-        
         scores = get_shape_scores_window(win, shapes)
         
         if scores:
-            score = sorted(scores, key=lambda x: x['W_MATCH'], reverse=True)[0]
-            window_scores.append(['plain', w['coord'], score])
+            option = sorted(scores, key=lambda x: x['W_MATCH'], reverse=True)[0]
+            option['coord'] = w['coord']
+            options.append(option)
     
-    # print("-------------------------ROTATED SCORES")
-    for w in rot_patt_windows:
-        win = w['grid']
-        
-        # print("--------WINDOW")
-        # print_pattern(get_coords_from_grid(win))
-        
-        scores = get_shape_scores_window(win, shapes)
-        if scores:
-            score = sorted(scores, key=lambda x: x['W_MATCH'], reverse=True)[0]
-            window_scores.append(['rot', w['coord'], score])
+    return options
     
-    return window_scores
+    
+def solve(patt_values, shapes_set=None):
+    solution = []
+    
+    shapes = SHAPES.values()
+    if shapes_set:
+        shapes = [s for s in SHAPES if s['name'] in shapes_set]
+    
+    # current_hole = [1]
+    patt = gen_obj_grid(patt_values)
+    print_pattern(get_coords_from_grid(patt))
+    
+    while patt:
+        rotated_patt = get_90_rotated(patt)
+        print_pattern(get_coords_from_grid(rotated_patt))
+    
+        patt_options = get_all_options(patt, shapes)
+        rot_patt_options = get_all_options(rotated_patt, shapes)
+    
+        patt_opt = get_best_option(patt_options) if patt_options else None
+        rot_patt_opt = get_best_option(rot_patt_options) if patt_options else None
+    
+        def fill(pattern, option):
+            import copy
+            patt_clone = copy.copy(pattern)
+            solution.append(option)
+            return fill_piece(patt_clone, option['coord'], option['shape'], option['rot'])
+    
+        if patt_opt and rot_patt_opt:
+            if patt_opt['W_X_S'] > rot_patt_opt['W_X_S']:
+                patt = fill(patt, patt_opt)
+            else:
+                patt = fill(rotated_patt, rot_patt_opt)
+            
+        elif patt_opt:
+            patt = fill(patt, patt_opt)
+        elif rot_patt_opt:
+            patt = fill(rotated_patt, rot_patt_opt)
+        else:
+            # TODO: Something weird happened. Analyse and rerun.
+            print_pattern(get_coords_from_grid(patt))
+            break
+
+
+        patt = get_trimmed_pattern(patt)
+        print("NOW PATT")
+        print_pattern(get_coords_from_grid(patt))
+        print(patt)
+    
+    print('final_patt', patt)
+    print(solution)
+    
+    
+def get_best_option(options):
+    return sorted(options, key=lambda x: x['W_X_S'], reverse=True)[0]
+    
     
 def fill_piece(patt, coord, shape, rotate=False):
     shape = SHAPES[shape]
@@ -480,41 +515,6 @@ def get_trimmed_pattern(patt):
             current_patt.append(row)
             
     return current_patt
-    
-    
-def solve(patt_values, shapes_set=None):
-    shapes = SHAPES.values()
-    if shapes_set:
-        shapes = [s for s in SHAPES if s['name'] in shapes_set]
-
-    values = patt_values[:]
-    
-    # current_hole = [1]
-    
-    # while current_hole:
-    obj_grid = gen_obj_grid(values)
-
-    print_pattern(get_coords_from_grid(obj_grid))
-    scores = get_all_windows_scores_for_shapes(obj_grid, shapes)
-    scores = sorted(scores, key=lambda x: x[2]['W_X_S'], reverse=True)
-    for score in scores:
-        print(score)
-    
-    this_run_piece = scores[0]
-    
-    import copy
-    # TODO: based on which one: plain or rot
-    patt_clone = copy.copy(obj_grid)
-    
-    print(this_run_piece[2]['shape'])
-
-    current_hole = fill_piece(patt_clone, this_run_piece[1], this_run_piece[2]['shape'], this_run_piece[2]['rot'])
-    
-    current_hole = get_trimmed_pattern(current_hole)
-    
-    print_pattern(get_coords_from_grid(current_hole))
-    print(current_hole)
-        
 
 
 solve(windowable_pattern1, [])
