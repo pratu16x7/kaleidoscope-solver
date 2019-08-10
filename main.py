@@ -11,6 +11,7 @@
 SHAPE_COORD_LIMIT = 3
 HORI_WINDOW_SIZE = [3,2]
 VERT_WINDOW_SIZE = [2,3]
+DEVIATION_WEIGHT = 0.15
 
 ROT_90_EDGE_MAP = {
     'u': 'l',
@@ -38,27 +39,27 @@ SHAPES = {
     'l-left': {
         'name': 'l-left',
         'coords': [ [0,0], [1,0], [1,1], [1,2] ],
-        'rare': 0
+        'deviated': 0
     },
     'l-right': {
         'name': 'l-right',
         'coords': [ [0,2], [1,0], [1,1], [1,2] ],
-        'rare': 0
+        'deviated': 0
     },
     't': {
         'name': 't',
         'coords': [ [0,1], [1,0], [1,1], [1,2] ],
-        'rare': 1
+        'deviated': 1
     },
     'z-left': {
         'name': 'z-left',
         'coords': [ [0,0], [0,1], [1,1], [1,2] ],
-        'rare': 1
+        'deviated': 1
     },
     'z-right': {
         'name': 'z-right',
         'coords': [ [0,1], [0,2], [1,0], [1,1] ],
-        'rare': 1
+        'deviated': 1
     }
 }
 
@@ -78,6 +79,20 @@ windowable_pattern1 = [
            [4,1]
 ]
 
+windowable_pattern2 = [ 
+    [0,0], [0,1], [0,2], [0,3], 
+    [1,0], [1,1], [1,2], [1,3], 
+    [2,0], [2,1], [2,2], [2,3],
+           [3,1], [3,2],
+           [4,1], [4,2],
+]
+
+windowable_pattern3 = [ 
+    [0,0], [0,1], [0,2], 
+    [1,0], [1,1], [1,2], [1,3], 
+    [2,0], [2,1], [2,2], [2,3], [2,4], 
+]
+
 def get_shape_scores_window(window_grid, shapes=SHAPES.values()):
     all_scores = []
     
@@ -95,7 +110,7 @@ def get_shape_scores_window(window_grid, shapes=SHAPES.values()):
             
             edge_score['shape'] = name
             edge_score['rot'] = 0
-            edge_score['rare'] = shape['rare']
+            edge_score['deviated'] = shape['deviated']
             
             all_scores.append(edge_score)
         
@@ -109,7 +124,7 @@ def get_shape_scores_window(window_grid, shapes=SHAPES.values()):
             edge_score = calc_edges_score(window_grid, rotated_180_shape_grid)
             edge_score['shape'] = name
             edge_score['rot'] = 1
-            edge_score['rare'] = shape['rare']
+            edge_score['deviated'] = shape['deviated']
             
             all_scores.append(edge_score)
             
@@ -173,7 +188,7 @@ def is_shape_inside_window(window, shape):
         return {
             'boundary_matches': [5,10],
             'edge_touching_blocks': [3, 4],
-            'is_rare_shape': 0
+            'is_deviated_shape': 0
         }
         
 def get_coords_from_grid(grid):
@@ -404,11 +419,16 @@ def get_all_options(patt, shapes):
     
     
 def solve(patt_values, shapes_set=None):
+    import copy
+    
     solution = []
     
-    shapes = SHAPES.values()
+    shapes = copy.deepcopy(SHAPES)
     if shapes_set:
-        shapes = [s for s in SHAPES if s['name'] in shapes_set]
+        shapes = {}
+        for name in SHAPES:
+            if name in shapes_set:
+                shapes[name] = SHAPES[name]
 
     patt = gen_obj_grid(patt_values)
     
@@ -420,17 +440,17 @@ def solve(patt_values, shapes_set=None):
         rotated_patt = get_90_rotated(patt)
         print_pattern(get_coords_from_grid(rotated_patt))
     
-        patt_options = get_all_options(patt, shapes)
-        rot_patt_options = get_all_options(rotated_patt, shapes)
+        patt_options = get_all_options(patt, shapes.values())
+        rot_patt_options = get_all_options(rotated_patt, shapes.values())
     
         patt_opt = get_best_option(patt_options) if patt_options else None
         rot_patt_opt = get_best_option(rot_patt_options) if rot_patt_options else None
     
         def fill(pattern, option):
-            import copy
             patt_clone = copy.copy(pattern)
             solution.append(option)
-            return fill_piece(patt_clone, option['coord'], option['shape'], option['rot'])
+            shape = shapes.pop(option['shape'])
+            return fill_piece(patt_clone, option['coord'], shape, option['rot'])
     
         if patt_opt and rot_patt_opt:
             if patt_opt['W_X_S'] > rot_patt_opt['W_X_S']:
@@ -450,7 +470,7 @@ def solve(patt_values, shapes_set=None):
         patt = get_trimmed_pattern(patt)
         
     
-    print('final_patt', patt)
+    print('final_patt', patt, shapes)
     for piece in solution:
         print(piece['coord'])
         print(piece['shape'])
@@ -461,12 +481,10 @@ def solve(patt_values, shapes_set=None):
     
     
 def get_best_option(options):
-    return sorted(options, key=lambda x: x['W_X_S'] + 0.15 * x['rare'], reverse=True)[0]
+    return sorted(options, key=lambda x: x['W_X_S'] + DEVIATION_WEIGHT * x['deviated'], reverse=True)[0]
     
     
 def fill_piece(patt, coord, shape, rotate=False):
-    shape = SHAPES[shape]
-
     shape_grid = gen_obj_grid(shape['coords'])
     if rotate:
         shape_grid = get_180_rotated(shape_grid)
@@ -523,5 +541,9 @@ def get_trimmed_pattern(patt):
     return current_patt
 
 
-solve(windowable_pattern1, [])
+# Not working. Test and when it does, build a tree model to backtrack to what it did. (Warning: tricky and involves recursion and trees. Do a simple ds in isolation first to see if you do get it.)
+# solve(windowable_pattern3, ['l-right', 't', 'z-left'])
+# solve(windowable_pattern3, ['l-left', 't', 'z-left'])
+
+
 
