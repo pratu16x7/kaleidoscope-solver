@@ -409,12 +409,14 @@ def solve(patt_values, shapes_set=None):
     shapes = SHAPES.values()
     if shapes_set:
         shapes = [s for s in SHAPES if s['name'] in shapes_set]
-    
-    # current_hole = [1]
+
     patt = gen_obj_grid(patt_values)
-    print_pattern(get_coords_from_grid(patt))
     
     while patt:
+        print("NOW PATT")
+        print_pattern(get_coords_from_grid(patt))
+        print(patt)
+        
         rotated_patt = get_90_rotated(patt)
         print_pattern(get_coords_from_grid(rotated_patt))
     
@@ -422,7 +424,7 @@ def solve(patt_values, shapes_set=None):
         rot_patt_options = get_all_options(rotated_patt, shapes)
     
         patt_opt = get_best_option(patt_options) if patt_options else None
-        rot_patt_opt = get_best_option(rot_patt_options) if patt_options else None
+        rot_patt_opt = get_best_option(rot_patt_options) if rot_patt_options else None
     
         def fill(pattern, option):
             import copy
@@ -445,18 +447,21 @@ def solve(patt_values, shapes_set=None):
             print_pattern(get_coords_from_grid(patt))
             break
 
-
         patt = get_trimmed_pattern(patt)
-        print("NOW PATT")
-        print_pattern(get_coords_from_grid(patt))
-        print(patt)
+        
     
     print('final_patt', patt)
-    print(solution)
+    for piece in solution:
+        print(piece['coord'])
+        print(piece['shape'])
+        print(piece['rot'])
+        print(piece['W_X_S'])
+        print('------------------')
+    # print(solution)
     
     
 def get_best_option(options):
-    return sorted(options, key=lambda x: x['W_X_S'], reverse=True)[0]
+    return sorted(options, key=lambda x: x['W_X_S'] + 0.15 * x['rare'], reverse=True)[0]
     
     
 def fill_piece(patt, coord, shape, rotate=False):
@@ -507,12 +512,13 @@ def get_trimmed_pattern(patt):
         if not all(x == None for x in row):
             current_patt.append(row)
     
-    rotated = get_180_rotated(current_patt)
+    if current_patt:
+        rotated = get_180_rotated(current_patt)
     
-    current_patt = []
-    for row in rotated:
-        if not all(x == None for x in row):
-            current_patt.append(row)
+        current_patt = []
+        for row in rotated:
+            if not all(x == None for x in row):
+                current_patt.append(row)
             
     return current_patt
 
