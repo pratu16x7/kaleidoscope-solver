@@ -418,7 +418,7 @@ def get_all_options(patt, shapes):
     return options
     
     
-def solve(patt_values, shapes_set=None):
+def solve_patt_with_pieces(patt_values, shapes_set=None):
     import copy
     
     solution = []
@@ -546,9 +546,14 @@ def get_trimmed_pattern(patt):
     return current_patt
 
 
-# Not working. Test and when it does, build a tree model to backtrack to what it did. (Warning: tricky and involves recursion and trees. Do a simple ds in isolation first to see if you do get it.)
-solve(windowable_pattern3, ['l-right', 't', 'z-right'])
-# solve(windowable_pattern3, ['l-left', 't', 'z-left'])
 
 
+def solve():
+    # Not working. Test and when it does, build a tree model to backtrack to what it did. (Warning: tricky and involves recursion and trees. Do a simple ds in isolation first to see if you do get it.)
 
+    # solve_patt_with_pieces(windowable_pattern3, ['l-left', 't', 'z-left'])
+    solve_patt_with_pieces(windowable_pattern3, ['l-right', 't', 'z-right'])
+
+
+if __name__ == '__main__':
+    solve()
