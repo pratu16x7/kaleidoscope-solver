@@ -1,0 +1,39 @@
+.grid {
+  width: 720px;
+}
+
+.grid-row {
+  height: 80px;
+}
+
+.grid-cell {
+  width: 80px;
+  height: 80px;
+  float: left;
+}
+
+.grid-cell.red {
+  background-color: #F00;
+  border: 2px solid #F00;
+}
+
+.grid-cell.black {
+  background-color: #000;
+  border: 2px solid #000;
+}
+
+.grid-cell.left {
+  border-left: 2px solid #fff;
+}
+
+.grid-cell.right {
+  border-right: 2px solid #fff;
+}
+
+.grid-cell.up {
+  border-top: 2px solid #fff;
+}
+
+.grid-cell.down {
+  border-bottom: 2px solid #fff;
+}

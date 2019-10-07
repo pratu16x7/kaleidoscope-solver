@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="grid">
+    
+    {% for row in data.pattern %}
+    {% set outer_loop = loop %}
+    <div class="grid-row">
+      {% for val in row %}
+      {% set edges = data.edge_pattern[outer_loop.index0][loop.index0] %}
+      <div class="grid-cell 
+        {% if val == 'r' %} red 
+        {% else %} black 
+        {% endif %}
+        
+        {% if edges[0] == '1' %} up {% endif %}
+        {% if edges[1] == '1' %} left {% endif %}
+        {% if edges[2] == '1' %} right {% endif %}
+        {% if edges[3] == '1' %} down {% endif %}
+        ">
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    
+  </div>
+  <div class="data">
+    Red: {{ data.red_count }}
+    Black: {{ data.black_count }}
+    Total: {{ data.total_count }}
+  </div>
+{% endblock %}
+
