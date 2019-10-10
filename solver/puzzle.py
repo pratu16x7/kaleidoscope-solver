@@ -40,7 +40,6 @@ def get_pieces():
     piece = calc_props(p['val'])
     piece['name'] = p['name']
     pieces.append(piece)
-    print(piece['grid'])
     
   return pieces
   
@@ -131,6 +130,8 @@ def get_edge_grid(grid):
     'u': 1000
   }
   
+  grid_w = len(grid[0])
+  
   def add_edge(edges, edge):
     num = int(edges) + dir_nos[edge]
     return "{:04d}".format(num)
@@ -145,13 +146,10 @@ def get_edge_grid(grid):
   
   for cell_row in grid:
     # Your guinea pig, row level
-    curr_edges_row = [no_edge] * 8
+    curr_edges_row = [no_edge] * grid_w
     
-    if not prev_edges_row:
-      curr_edges_row = [u_edge] * 8
-      
-      
-    
+    # if not prev_edges_row:
+#       curr_edges_row = [u_edge] * grid_w
     
     # Set cell level prev
     prev_edge = None
@@ -164,7 +162,7 @@ def get_edge_grid(grid):
       
       if not cell_prev:
         curr_edge = add_edge(curr_edge, 'l')
-      
+        
       if cell:
         if cell_prev and cell_prev['color'] == cell['color']:
           curr_edge = add_edge(curr_edge, 'l')
@@ -174,6 +172,16 @@ def get_edge_grid(grid):
           # Put down in that one and up in current
           prev_edges_row[idx] = add_edge(prev_edges_row[idx], 'd')
           curr_edge = add_edge(curr_edge, 'u')
+          
+        elif not prev_cell_row or not prev_cell_row[idx]:
+          curr_edge = add_edge(curr_edge, 'u')
+          
+      else:
+        if cell_prev:
+          prev_edge = add_edge(prev_edge, 'r')
+          
+        if prev_cell_row and prev_cell_row[idx]:
+          prev_edges_row[idx] = add_edge(prev_edges_row[idx], 'd')
       
       
       # Add PREV edge to row, and update it
@@ -186,7 +194,7 @@ def get_edge_grid(grid):
       
     # Update the right for end of row
     prev_edge = add_edge(prev_edge, 'r')
-    curr_edges_row[7] = prev_edge
+    curr_edges_row[grid_w-1] = prev_edge
     
     
     # Add PREV row to grid, and update it

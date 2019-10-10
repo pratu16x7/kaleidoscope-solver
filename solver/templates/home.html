@@ -2,7 +2,6 @@
 
 {% macro grid_pattern(grid, classname) -%}
   <div class="grid {{classname}}">
-    
     {% for row in grid %}
     <div class="grid-row">
       {% for cell in row %}
@@ -23,10 +22,8 @@
       {% endfor %}
     </div>
     {% endfor %}
-    
   </div>
 {%- endmacro %}
-
 
 
 {% block content %}
