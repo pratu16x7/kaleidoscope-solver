@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from puzzle import add_edges_to_grid_data 
+
 CELL_SIZE = 16
 CELLS_SIDE = 8
 IMG_SIZE = 128
@@ -20,14 +22,14 @@ def get_pattern_vals(img):
   start_point = CELL_SIZE / 2
   indices_1d = [int(start_point + CELL_SIZE * x) for x in range(0, CELLS_SIDE)]
   
-  pattern = []
+  grid = []
   red_count = 0
   black_count = 0
   
   
   # TODO: better sampling of color
   for i_1d in indices_1d:
-    vals = []
+    row = []
     for j_1d in indices_1d:
       val = img[i_1d][j_1d]
       if val > BLACK_THRESH:
@@ -36,98 +38,18 @@ def get_pattern_vals(img):
       else:
         val = '0'
         black_count += 1
-      vals.append(val)
-    pattern.append(vals)
-    
-  # ulrd = 0000
-  
-  u_edge = '1000'
-  no_edge = '0000'
-  
-  dir_nos = {
-    'd': 1,
-    'r': 10,
-    'l': 100,
-    'u': 1000
-  }
-  
-  def add_edge(edges, edge):
-    num = int(edges) + dir_nos[edge]
-    return "{:04d}".format(num)
-    # return str().zfill(4)
-  
-  edge_pattern = []
-  
-  
-  # Set row level prev
-  prev_edges_row = []
-  # Just
-  prev_cell_row = []
-  
-  for cell_row in pattern:
-    # Your guinea pig, row level
-    curr_edges_row = [no_edge] * 8
-    
-    if not prev_edges_row:
-      curr_edges_row = [u_edge] * 8
-      
-      
-    
-    
-    # Set cell level prev
-    prev_edge = None
-    # Just
-    cell_prev = None
-    
-    for idx, cell in enumerate(cell_row):
-      # Your guinea pig, cell level
-      curr_edge = curr_edges_row[idx]
-      
-      if not cell_prev:
-        curr_edge = add_edge(curr_edge, 'l')
-      
-      if cell_prev == cell:
-        curr_edge = add_edge(curr_edge, 'l')
-        prev_edge = add_edge(prev_edge, 'r')
-        
-      if prev_cell_row and prev_cell_row[idx] == cell:
-        # Put down in that one and up in current
-        prev_edges_row[idx] = add_edge(prev_edges_row[idx], 'd')
-        curr_edge = add_edge(curr_edge, 'u')
-      
-      
-      # Add PREV edge to row, and update it
-      if idx > 0:
-        curr_edges_row[idx-1] = prev_edge
-      prev_edge = curr_edge
-      # Just
-      cell_prev = cell
-      
-      
-    # Update the right for end of row
-    prev_edge = add_edge(prev_edge, 'r')
-    curr_edges_row[7] = prev_edge
-    
-    
-    # Add PREV row to pattern, and update it
-    if prev_edges_row:
-      edge_pattern.append(prev_edges_row)
-    prev_edges_row = curr_edges_row
-    # Just
-    prev_cell_row = cell_row
-    
-    
-    
-  # Update the down for end of pattern
-  prev_edges_row = [add_edge(edge, 'd') for edge in prev_edges_row]
-  edge_pattern.append(prev_edges_row)
+      row.append({
+        'color': val
+      })
+    grid.append(row)
+
+  grid = add_edges_to_grid_data(grid)
   
   return {
-    'pattern': pattern,
+    'grid': grid,
     'red_count': red_count,
     'black_count': black_count,
     'total_count': GRID_AREA,
-    'edge_pattern': edge_pattern
   }
   
 

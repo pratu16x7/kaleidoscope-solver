@@ -107,6 +107,18 @@ def calc_props(s):
   
   
 def add_edges_to_grid_data(grid):
+  edge_grid = get_edge_grid(grid) 
+  
+  for i, row in enumerate(grid):
+    for j, cell in enumerate(row):
+      if cell:
+        cell['edges'] = edge_grid[i][j]
+      
+      
+  return grid
+  
+  
+def get_edge_grid(grid):
   # ulrd = 0000
   
   u_edge = '1000'
@@ -124,7 +136,7 @@ def add_edges_to_grid_data(grid):
     return "{:04d}".format(num)
     # return str().zfill(4)
     
-  edge_pattern = []
+  edge_grid = []
   
   # Set row level prev
   prev_edges_row = []
@@ -153,14 +165,15 @@ def add_edges_to_grid_data(grid):
       if not cell_prev:
         curr_edge = add_edge(curr_edge, 'l')
       
-      if cell and cell_prev == cell['color']:
-        curr_edge = add_edge(curr_edge, 'l')
-        prev_edge = add_edge(prev_edge, 'r')
+      if cell:
+        if cell_prev and cell_prev['color'] == cell['color']:
+          curr_edge = add_edge(curr_edge, 'l')
+          prev_edge = add_edge(prev_edge, 'r')
         
-      if cell and prev_cell_row and prev_cell_row[idx] and prev_cell_row[idx]['color'] == cell['color']:
-        # Put down in that one and up in current
-        prev_edges_row[idx] = add_edge(prev_edges_row[idx], 'd')
-        curr_edge = add_edge(curr_edge, 'u')
+        if prev_cell_row and prev_cell_row[idx] and prev_cell_row[idx]['color'] == cell['color']:
+          # Put down in that one and up in current
+          prev_edges_row[idx] = add_edge(prev_edges_row[idx], 'd')
+          curr_edge = add_edge(curr_edge, 'u')
       
       
       # Add PREV edge to row, and update it
@@ -168,7 +181,7 @@ def add_edges_to_grid_data(grid):
         curr_edges_row[idx-1] = prev_edge
       prev_edge = curr_edge
       # Just
-      cell_prev = cell and cell['color']
+      cell_prev = cell
       
       
     # Update the right for end of row
@@ -176,30 +189,20 @@ def add_edges_to_grid_data(grid):
     curr_edges_row[7] = prev_edge
     
     
-    # Add PREV row to pattern, and update it
+    # Add PREV row to grid, and update it
     if prev_edges_row:
-      edge_pattern.append(prev_edges_row)
+      edge_grid.append(prev_edges_row)
     prev_edges_row = curr_edges_row
     # Just
     prev_cell_row = cell_row
     
     
     
-  # Update the down for end of pattern
+  # Update the down for end of grid
   prev_edges_row = [add_edge(edge, 'd') for edge in prev_edges_row]
-  edge_pattern.append(prev_edges_row)
-  
-  
-  
-  for i, row in enumerate(grid):
-    for j, cell in enumerate(row):
-      if cell:
-        cell['edges'] = edge_pattern[i][j]
-      
-      
-  return grid
+  edge_grid.append(prev_edges_row)
 
-  
+  return edge_grid
 
 
 #########################################################################

@@ -1,28 +1,36 @@
 {% extends "base.html" %}
 
-{% block content %}
-  <div class="grid board">
+{% macro grid_pattern(grid, classname) -%}
+  <div class="grid {{classname}}">
     
-    {% for row in data.pattern %}
-    {% set outer_loop = loop %}
+    {% for row in grid %}
     <div class="grid-row">
-      {% for val in row %}
-      {% set edges = data.edge_pattern[outer_loop.index0][loop.index0] %}
+      {% for cell in row %}
       <div class="grid-cell 
-        {% if val == 'r' %} red 
+        {% if cell == None %} white 
+        {% elif cell['color'] == 'r' %} red 
         {% else %} black 
         {% endif %}
         
-        {% if edges[0] == '1' %} up {% endif %}
-        {% if edges[1] == '1' %} left {% endif %}
-        {% if edges[2] == '1' %} right {% endif %}
-        {% if edges[3] == '1' %} down {% endif %}
+        {% if cell %}
+          {% if cell['edges'][0] == '1' %} up {% endif %}
+          {% if cell['edges'][1] == '1' %} left {% endif %}
+          {% if cell['edges'][2] == '1' %} right {% endif %}
+          {% if cell['edges'][3] == '1' %} down {% endif %}
+        {% endif %}
         ">
       </div>
       {% endfor %}
     </div>
     {% endfor %}
+    
   </div>
+{%- endmacro %}
+
+
+
+{% block content %}
+  {{ grid_pattern(data.grid, 'board') }}
   
   <h3>Data</h3>
   <div class="data">
@@ -33,21 +41,7 @@
   
   <h3>Pieces</h3>
   {% for piece in pieces %}
-  <div class="grid piece">
-    {% for row in piece['grid'] %}
-    <div class="grid-row">
-      {% for cell in row %}
-      <div class="grid-cell 
-        {% if cell == None %} white 
-        {% elif cell['color'] == 'r' %} red 
-        {% else %} black 
-        {% endif %}
-        ">
-      </div>
-      {% endfor %}
-    </div>
-    {% endfor %}
-  </div>
+    {{ grid_pattern(piece.grid, 'piece') }}
   {% endfor %}
 {% endblock %}
 
