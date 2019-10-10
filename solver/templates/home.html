@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="grid">
+  <div class="grid board">
     
     {% for row in data.pattern %}
     {% set outer_loop = loop %}
@@ -22,12 +22,32 @@
       {% endfor %}
     </div>
     {% endfor %}
-    
   </div>
+  
+  <h3>Data</h3>
   <div class="data">
     Red: {{ data.red_count }}
     Black: {{ data.black_count }}
     Total: {{ data.total_count }}
   </div>
+  
+  <h3>Pieces</h3>
+  {% for piece in pieces %}
+  <div class="grid piece">
+    {% for row in piece['grid'] %}
+    <div class="grid-row">
+      {% for cell in row %}
+      <div class="grid-cell 
+        {% if cell == None %} white 
+        {% elif cell['color'] == 'r' %} red 
+        {% else %} black 
+        {% endif %}
+        ">
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
 {% endblock %}
 

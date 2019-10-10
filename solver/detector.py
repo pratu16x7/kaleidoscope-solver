@@ -11,6 +11,11 @@ GRID_AREA = 64
 # For now, I'll just focussing on solving the puzzle
 BLACK_THRESH = 40
 
+
+# TODO: next up, holes
+# and make the first move with the smallest hole
+# and render the decision tree with that move
+
 def get_pattern_vals(img):
   start_point = CELL_SIZE / 2
   indices_1d = [int(start_point + CELL_SIZE * x) for x in range(0, CELLS_SIDE)]
@@ -47,7 +52,6 @@ def get_pattern_vals(img):
   }
   
   def add_edge(edges, edge):
-    print('edges', edges, edge)
     num = int(edges) + dir_nos[edge]
     return "{:04d}".format(num)
     # return str().zfill(4)
@@ -126,20 +130,6 @@ def get_pattern_vals(img):
     'edge_pattern': edge_pattern
   }
   
-def get_holes(cell):
-  trav = []
-  untrav = []
-  
-  holes = {}
-  
-  # Do flood fills for each of the untrav, with diff color each time, and keep adding in trav
-  
-  return holes
-  
-def flood_fill(cell):
-  trav = []
-  to_trav = []
-  return trav
 
 def show_image(image_obj, caption = ''):
   cv2.imshow(caption, image_obj)
@@ -218,6 +208,7 @@ def get_pattern():
   # img = cv2.imread('./images/45_2.jpg', 0)
   # img = cv2.imread('./images/61_2.jpg', 0)
   # img = cv2.imread('./images/65_2.jpg', 0)
+  # img = cv2.imread('./images/6_1.jpg', 0)
   img = cv2.imread('./images/18_1.jpg', 0)
   img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
 

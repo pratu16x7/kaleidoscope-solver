@@ -1,14 +1,21 @@
+.board {
+  width: 300px;
+}
+.piece {
+  margin: 5px 0;
+}
+
 .grid {
-  width: 720px;
+  display: block;
 }
 
 .grid-row {
-  height: 80px;
+  height: 36px;
 }
 
 .grid-cell {
-  width: 80px;
-  height: 80px;
+  width: 32px;
+  height: 32px;
   float: left;
 }
 
@@ -22,18 +29,24 @@
   border: 2px solid #000;
 }
 
+.grid-cell.white {
+  background-color: #FFF;
+  border: 2px solid #FFF;
+}
+
+
 .grid-cell.left {
-  border-left: 2px solid #fff;
+  border-left: 2px solid pink;
 }
 
 .grid-cell.right {
-  border-right: 2px solid #fff;
+  border-right: 2px solid pink;
 }
 
 .grid-cell.up {
-  border-top: 2px solid #fff;
+  border-top: 2px solid pink;
 }
 
 .grid-cell.down {
-  border-bottom: 2px solid #fff;
+  border-bottom: 2px solid pink;
 }
