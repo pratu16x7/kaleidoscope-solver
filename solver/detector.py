@@ -1,57 +1,14 @@
 import cv2
 import numpy as np
 
-from puzzle import add_edges_to_grid_data 
+from puzzle import get_board_from_img 
 
-CELL_SIZE = 16
-CELLS_SIDE = 8
+
 IMG_SIZE = 128
-
-GRID_AREA = 64
 
 # TODO: define a better way to define this for different images
 # For now, I'll just focussing on solving the puzzle
 BLACK_THRESH = 40
-
-
-# TODO: next up, holes
-# and make the first move with the smallest hole
-# and render the decision tree with that move
-
-def get_pattern_vals(img):
-  start_point = CELL_SIZE / 2
-  indices_1d = [int(start_point + CELL_SIZE * x) for x in range(0, CELLS_SIDE)]
-  
-  grid = []
-  red_count = 0
-  black_count = 0
-  
-  
-  # TODO: better sampling of color
-  for i_1d in indices_1d:
-    row = []
-    for j_1d in indices_1d:
-      val = img[i_1d][j_1d]
-      if val > BLACK_THRESH:
-        val = 'r'
-        red_count += 1
-      else:
-        val = '0'
-        black_count += 1
-      row.append({
-        'color': val
-      })
-    grid.append(row)
-
-  grid = add_edges_to_grid_data(grid)
-  
-  return {
-    'grid': grid,
-    'red_count': red_count,
-    'black_count': black_count,
-    'total_count': GRID_AREA,
-  }
-  
 
 def show_image(image_obj, caption = ''):
   cv2.imshow(caption, image_obj)
@@ -213,14 +170,14 @@ def get_pattern():
 
   cnt = np.array([[top_left],[top_right],[bottom_left],[bottom_right]], dtype=np.single)
 
-  H,mask = cv2.findHomography(cnt, np.array([[[0., 0.]],[[128., 0.]],[[0., 128.]],[[128.,128.]]],dtype=np.single), cv2.RANSAC)
-  cropped_pattern = cv2.warpPerspective(img,H,(128, 128))
+  H,mask = cv2.findHomography(cnt, np.array([[[0., 0.]],[[IMG_SIZE, 0.]],[[0., IMG_SIZE]],[[IMG_SIZE,IMG_SIZE]]],dtype=np.single), cv2.RANSAC)
+  cropped_pattern = cv2.warpPerspective(img,H,(IMG_SIZE, IMG_SIZE))
 
   # # foo 4
   # show_image(cropped_pattern, 'cropped')
 
 
-  pattern_vals = get_pattern_vals(cropped_pattern)
+  pattern_vals = get_board_from_img(cropped_pattern, BLACK_THRESH)
 
   # for row in pattern_vals:
 #     print(" ".join(row))

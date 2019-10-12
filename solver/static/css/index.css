@@ -1,5 +1,5 @@
 .board {
-  width: 300px;
+  width: 170px;
 }
 .piece {
   margin: 5px 0;
@@ -10,12 +10,12 @@
 }
 
 .grid-row {
-  height: 36px;
+  height: 20px;
 }
 
 .grid-cell {
-  width: 32px;
-  height: 32px;
+  width: 16px;
+  height: 16px;
   float: left;
 }
 
@@ -36,17 +36,17 @@
 
 
 .grid-cell.left {
-  border-left: 2px solid pink;
+  border-left: 2px solid #0f0;
 }
 
 .grid-cell.right {
-  border-right: 2px solid pink;
+  border-right: 2px solid #0f0;
 }
 
 .grid-cell.up {
-  border-top: 2px solid pink;
+  border-top: 2px solid #0f0;
 }
 
 .grid-cell.down {
-  border-bottom: 2px solid pink;
+  border-bottom: 2px solid #0f0;
 }
