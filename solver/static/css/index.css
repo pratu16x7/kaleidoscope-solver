@@ -17,6 +17,8 @@
   width: 16px;
   height: 16px;
   float: left;
+  
+  color: pink;
 }
 
 .grid-cell.red {

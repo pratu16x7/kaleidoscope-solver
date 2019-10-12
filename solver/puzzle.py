@@ -96,7 +96,8 @@ def get_pattern_and_stats(s):
     color = cell[2]
     
     cells[coord] = {
-      'coord': [int(y), int(x)],
+      'coord_pair': [int(y), int(x)],
+      'coord': coord,
       'color': color,
       'edges': None if not edges_done else cell[3:]
     }
@@ -104,8 +105,8 @@ def get_pattern_and_stats(s):
     if color == 'r':
       colored_cells_cnt += 1
 
-  y_coords = [cell['coord'][0] for cell in cells.values()]
-  x_coords = [cell['coord'][1] for cell in cells.values()]
+  y_coords = [cell['coord_pair'][0] for cell in cells.values()]
+  x_coords = [cell['coord_pair'][1] for cell in cells.values()]
   min_y = min(y_coords)
   max_y = max(y_coords)
   min_x = min(x_coords)
@@ -120,7 +121,19 @@ def get_pattern_and_stats(s):
     row = []
     for j in range(grid_w):
       coord = str(i + min_y) + str(j + min_x)
-      row.append(cells[coord] if coord in cells else None)
+      cell = None
+      if coord in cells:
+        cell = cells[coord]
+        if min_y or min_x:
+          rel_coord_pair = [
+            cell['coord_pair'][0] - min_y,
+            cell['coord_pair'][1] - min_x
+          ]
+          
+          cell['rel_coord_pair'] = rel_coord_pair
+          cell['rel_coord'] = str(rel_coord_pair[0]) + str(rel_coord_pair[1])
+      
+      row.append(cell)
     grid.append(row)
   
   if not edges_done:
@@ -138,6 +151,7 @@ def get_pattern_and_stats(s):
     'size': len(cells),
     'type': cell_type,
     'colored_cells_cnt': colored_cells_cnt,
+    'min_coords': [min_y, min_x],
     # 'perimeter': perimeter,
     # 'deviation_index': deviation_index,
     # 'orientations': orientations
@@ -213,13 +227,7 @@ def get_board_from_img(img, thresh):
 
   grid = add_edges_to_grid_data(grid)
 
-  holes = get_holes(grid)
   
-  for key, hole in holes.items():
-     obj = get_pattern_and_stats(hole['cells'])
-     
-     obj['cells'] = hole['cells']
-     holes[key] = obj
      
 #      for row in obj['grid']:
 #        arr = [('x' if cell else '0') for cell in row]
@@ -232,10 +240,19 @@ def get_board_from_img(img, thresh):
     'red_count': red_count,
     'black_count': black_count,
     'total_count': GRID_AREA,
-    'holes': holes
   }
   
 
+def get_holes_and_stats(grid):
+  holes = get_holes(grid)
+  
+  for key, hole in holes.items():
+     obj = get_pattern_and_stats(hole['cells'])
+     
+     obj['cells'] = hole['cells']
+     holes[key] = obj
+     
+  return holes
 
 
 

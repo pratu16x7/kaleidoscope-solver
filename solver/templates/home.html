@@ -17,7 +17,12 @@
           {% if cell['edges'][2] == '1' %} right {% endif %}
           {% if cell['edges'][3] == '1' %} down {% endif %}
         {% endif %}
-        ">
+        "> 
+        {% if cell.rel_coord is defined %}
+          {{ cell['rel_coord'] }}
+        {% else %}
+          {{ cell['coord'] }}
+        {% endif %}
       </div>
       {% endfor %}
     </div>
@@ -37,7 +42,7 @@
   </div>
   
   <h3>Holes, smallest first</h3>
-  {% for key, hole in data.holes.items() %}
+  {% for key, hole in holes.items() %}
     {{ grid_pattern(hole.grid, 'piece') }}
   {% endfor %}
   

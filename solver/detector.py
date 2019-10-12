@@ -82,7 +82,7 @@ def get_intersection(line1, line2):
   return [x, y]
 
 
-def get_pattern():
+def get_pattern_img():
   # img = cv2.imread('./images/97_1.jpg', 0)
   # img = cv2.imread('./images/45_2.jpg', 0)
   # img = cv2.imread('./images/61_2.jpg', 0)
@@ -176,14 +176,17 @@ def get_pattern():
   # # foo 4
   # show_image(cropped_pattern, 'cropped')
 
+  
 
-  pattern_vals = get_board_from_img(cropped_pattern, BLACK_THRESH)
+  return cropped_pattern
 
   # for row in pattern_vals:
 #     print(" ".join(row))
 
-  return pattern_vals
 
+
+def get_black_thresh():
+  return BLACK_THRESH
 
 
 
