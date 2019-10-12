@@ -98,21 +98,28 @@ def get_pattern_and_stats(s):
     cells[coord] = {
       'coord': [int(y), int(x)],
       'color': color,
-      'edges': None if not edges_done else cell[4:]
+      'edges': None if not edges_done else cell[3:]
     }
     
     if color == 'r':
       colored_cells_cnt += 1
 
-  grid_h = max([cell['coord'][0] for cell in cells.values()]) + 1
-  grid_w = max([cell['coord'][1] for cell in cells.values()]) + 1
+  y_coords = [cell['coord'][0] for cell in cells.values()]
+  x_coords = [cell['coord'][1] for cell in cells.values()]
+  min_y = min(y_coords)
+  max_y = max(y_coords)
+  min_x = min(x_coords)
+  max_x = max(x_coords)
+  
+  grid_h = max_y - min_y + 1
+  grid_w = max_x - min_x + 1
   
   grid = []
   
   for i in range(grid_h):
     row = []
     for j in range(grid_w):
-      coord = str(i) + str(j)
+      coord = str(i + min_y) + str(j + min_x)
       row.append(cells[coord] if coord in cells else None)
     grid.append(row)
   
@@ -366,7 +373,7 @@ def get_possible_pieces_for_hole(hole):
 #########################################################################
 
 # **
-# TODO: Can be made a bit cleaner
+# TODO: Can be made a bit cleaner, and performant
 # TODO: This can be more efficiently done with the 'no. of islands' approach,
 # right during creating the grid.
 def get_holes(grid):

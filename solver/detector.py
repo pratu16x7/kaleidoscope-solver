@@ -123,9 +123,9 @@ def get_pattern():
   areas = [cv2.contourArea(cnt) for cnt in contours]
   max_area = max(areas)
   cnt = contours[areas.index(max_area)]
-  print(areas)
-  # print(cnt)
-  print(len(contours))
+  # print(areas)
+  # # print(cnt)
+  # print(len(contours))
 
   hull = cv2.convexHull(cnt)
   simplified_cnt = cv2.approxPolyDP(hull,0.001*cv2.arcLength(hull,True),True)

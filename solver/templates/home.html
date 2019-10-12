@@ -37,7 +37,9 @@
   </div>
   
   <h3>Holes, smallest first</h3>
-  <p>Coming up in an hour, just you wait</p>
+  {% for key, hole in data.holes.items() %}
+    {{ grid_pattern(hole.grid, 'piece') }}
+  {% endfor %}
   
   <h3>Pieces</h3>
   {% for piece in pieces %}
