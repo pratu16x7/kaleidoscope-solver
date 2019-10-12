@@ -14,8 +14,8 @@
         {% if cell %}
           {% if cell['edges'][0] == '1' %} up {% endif %}
           {% if cell['edges'][1] == '1' %} left {% endif %}
-          {% if cell['edges'][2] == '1' %} right {% endif %}
-          {% if cell['edges'][3] == '1' %} down {% endif %}
+          {% if cell['edges'][2] == '1' %} down {% endif %}
+          {% if cell['edges'][3] == '1' %} right {% endif %}
         {% endif %}
         "> 
         {% if cell.rel_coord is defined %}
@@ -49,6 +49,10 @@
   <h3>Pieces</h3>
   {% for piece in pieces %}
     {{ grid_pattern(piece.grid, 'piece') }}
+    {% for orient in piece.orients %}
+      {{ grid_pattern(orient, 'piece') }}
+    {% endfor %}
+    <p>Done</p>
   {% endfor %}
 {% endblock %}
 

@@ -33,9 +33,6 @@ from data import PIECES
 
 
 
-
-
-
 #########################################################################
 # # Pieces props:
 # # data
@@ -63,10 +60,29 @@ def get_pieces():
   for p in PIECES:
     piece = get_pattern_and_stats(p['val'])
     piece['name'] = p['name']
-    pieces.append(piece)
+    pos = p['positions'] if 'positions' in p.keys() else 4
+    piece['positions'] = pos
     
+    grid = piece['grid']
+    
+    orients = []
+    
+    if pos != 1:
+      if pos == 2:
+        orients.append(get_rotated(grid, 90))
+      elif pos == 4:
+        r180 = get_rotated(grid, 180)
+        orients = [
+          get_rotated(grid, 90),
+          r180,
+          get_rotated(r180, 90)
+        ]
+
+    piece['orients'] = orients
+    
+    pieces.append(piece)
   return pieces
-  
+    
   
 # ***
 def get_pattern_and_stats(s):
@@ -448,7 +464,7 @@ def get_holes(grid):
       edges = cell[2:]
       
       # ulrd
-      dir_ops = [[-1,0], [0, -1], [0, 1], [1, 0]]
+      dir_ops = [[-1,0], [0, -1], [1, 0], [0, 1]]
       
       for idx, is_edge in enumerate(edges):
         if is_edge == '0':
@@ -493,14 +509,14 @@ def get_holes(grid):
 
 
 def get_edge_grid(grid):
-  # ulrd = 0000
+  # uldr = 0000
   
   u_edge = '1000'
   no_edge = '0000'
   
   dir_nos = {
-    'd': 1,
-    'r': 10,
+    'r': 1,
+    'd': 10,
     'l': 100,
     'u': 1000
   }
@@ -589,3 +605,42 @@ def get_edge_grid(grid):
 
 
 
+def get_rotated(grid, rotation):
+    l = len(grid[0])
+    h = len(grid)
+
+    if rotation == 90:
+        first_range = range(l)
+        second_range = range(h)
+        get_edges = lambda x: x[1:] + x[0]
+        
+    elif rotation == 180:
+        first_range = range(h - 1, -1, -1)
+        second_range = range(l - 1, -1, -1)
+        get_edges = lambda x: x[2:] + x[:2]
+    
+    import copy
+    rotated_grid = []
+    
+    ir = 0
+    for i in first_range:  
+      row = []
+      jr = 0
+      
+      for j in second_range:
+        if rotation == 90:
+          b = copy.copy(grid[j][i])
+        else:
+          b = copy.copy(grid[i][j])
+        if b:
+            b['coord_pair'] = [ir, jr]
+            b['coord'] = str(ir) + str(jr)
+            b['edges'] = get_edges(b['edges'])
+        row.append(b)
+        jr += 1
+        
+      rotated_grid.append(row)
+      ir += 1
+      
+    return rotated_grid
+    

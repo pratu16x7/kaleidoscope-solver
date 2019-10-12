@@ -31,12 +31,31 @@ class Solver:
     # this is only per state
     self.moves = []
     
+    # move = {
+    #   'piece_name': '',
+    #   'piece_orient': '',
+    #   'piece_coord': '',
+    #   'possible_windows': [], # with chars
+    #   'possible_pieces': [], # with chars
+    # }
     
+    self.available_pieces = []
+    self.used_pieces = []
+    
+    
+    self.magic_wand_placed = False
     
     # go though the holes to see if area <= 4, Those are already solved
-    
     # go through the holes to see which ones can house magic wand
-    
     # Now solve smallest hole first
+    # just display the possible pieces on every step
+    
+    
+    self.solve()
+    
+    
+  def solve(self):
+    pass
+    
     
     

@@ -7,12 +7,14 @@
 # # 'left' and 'right' char representations are not 'l' and 'r' as those are taken for shapes/colors
 # #   can think of some chirality representation in general
 # #   'left' identifies conventional orientation, and 'right' the opposite
+# # All orients = 4 unless specified
+
 
 PIECES = [
   # # octomino (8-0 deviation)
   {
     'name': 'magic_wand',
-    'val': '00r01x02r03x04r05x06r07x'
+    'val': '00r01x02r03x04r05x06r07x',
   },
   
   
@@ -65,7 +67,8 @@ PIECES = [
   # Square (4-2-2 deviation)
   {
     'name': 'small_wand',
-    'val': '00r01x10x11r'
+    'val': '00r01x10x11r',
+    'positions': 2
   },
   
   
@@ -74,11 +77,13 @@ PIECES = [
   # lines (3-0 deviation)
   {
     'name': 'line3_r',
-    'val': '00r01x02r'
+    'val': '00r01x02r',
+    'positions': 2
   },
   {
     'name': 'line3_x',
-    'val': '00x01r02x'
+    'val': '00x01r02x',
+    'positions': 2
   },
   
   # Ls (3-1-1 deviation)
@@ -101,10 +106,12 @@ PIECES = [
   # # monominoes (singletons)
   {
     'name': 'mono_r',
-    'val': '00r'
+    'val': '00r',
+    'positions': 1
   },
   {
     'name': 'mono_x',
-    'val': '00x'
+    'val': '00x',
+    'positions': 1
   }
 ]
