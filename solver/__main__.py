@@ -15,11 +15,15 @@ def home():
   # do everything else via the solver
   solver = Solver(board)
   
+  windows = solver.solve()
+  
+  # print(windows)
+  
   return render_template('home.html', 
     data=solver.board, 
     holes=solver.holes, 
     pieces=solver.pieces,
-    scans=solver.scans
+    windows=windows
   )
   
 if __name__ == "__main__":

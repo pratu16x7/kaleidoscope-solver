@@ -56,35 +56,39 @@ class Solver:
     # go through the holes to see which ones can house magic wand
     # Now solve smallest hole first
     # just display the possible pieces on every step
-    
-    
-    self.solve()
+
     
     
   def solve(self):
     
     hole = self.holes['1hole']['grid']
-    windows = get_valid_windows(hole)
+    
+    # Keep updating hole state and call this window again
+    windows = get_valid_windows(hole) 
+    # Take note of the size of window and available pieces to get the possible window cell count combinations
+    
+    # if desired 3 not there, 3 = 2 + 1 
+    min_cell_count = 4 
     
     window_index = {
       # 'coord_n_type': {
       #   'coord': '',
       #   'coord_pair': [],
-      #   'type': '', # hori or vert 3*6, or long small_wand-ish, helper will get approp coords
+      #   'type': '', # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
       #   'no_of_cells': 0,
       #   'no_of_edges': 0,
       #
       #   # after inital filter
-      #   'valid_pieces': [
+      #   'possible_pieces': [
       #     # pieces with respective scores
+      #     # and open edges if this piece is selected
       #   ],
       #
+      #   # NOT
       #   # from before itself, or after this window is selected
       #   'connecting_valid_windows': []
       # }
     }
-    
-    self.scans = []
     
     import copy
     
@@ -93,16 +97,71 @@ class Solver:
       y, x = int(coord[0]), int(coord[1])
       h, w = (2, 3) if window[2] == 'h' else (3, 2)
       
-      scan = []
+      grid = []
+      no_of_cells = 0
+      cell_coord_list = []
       for i in range(y, y + h):
-        scan_row = []
+        grid_row = []
         for j in range(x, x + w):
-          cell = hole[i][j]
-          scan_row.append(copy.copy(cell)) 
+          cell = copy.copy(hole[i][j])
+          if cell:
+            if 'rel_coord_pair' in cell:
+              cy, cx = cell['rel_coord_pair']
+            else:
+              cy, cx = cell['coord_pair']
+            cy_, cx_ = cy - y, cx - x 
+            cell['rel_coord_pair'] = [cy_, cx_]
+            cell['rel_coord'] = str(cy_) + str(cx_)
+            
+            cell_coord_list.append(cell['rel_coord'] + cell['color'])
+          
+          grid_row.append(cell) 
 
-        scan.append(scan_row)
+        grid.append(grid_row)
+        
+        
+      # Piece shortlisting
+      possible_pieces = []
+      
+      for piece in self.pieces:
+        # print('is?')
+        if piece['size'] > no_of_cells and piece['size'] >= min_cell_count:
+          # print('yaya')
+          for orient in [piece] + piece['orients']:
+            if set(piece['cell_coord_list']).issubset(cell_coord_list):
+              possible_pieces.append(piece)
     
-      self.scans.append(scan)
+      window_index[window] = {
+        'coord': coord,
+        'coord_pair': [y, x],
+        'type': window[2],
+        
+        'grid': grid,
+        'no_of_cells': no_of_cells,
+        'cell_coord_list': cell_coord_list,
+        
+        'possible_pieces': possible_pieces
+      }
+      
+      
+    return window_index
+      
+      
+      
+      
+      
+    # Next up solving:
+    
+    # Rarer pieces get a 0.5 - 0.95 (< 1) edge point boost, 
+    # so that if a rare and a simple have two edges open
+    # The rarer one triumphs with a half point
+    # But if it's a whole edge difference, the simple one is clear winner
+    # In other words, Rarity is a Tie-Breaker, not a one edge extra up
+    # Probably only for very high scores though
+    # for lower scores (like rare 4 edge open) might be better to simply
+    # favour the rare one blindly 
+    
+    
     
     
     # TODO: also a window for the small wand has to be scanned every move

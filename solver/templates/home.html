@@ -47,15 +47,18 @@
   {% endfor %}
   
   <h3>Windows</h3>
-  {% for window in scans %}
-    {{ grid_pattern(window, 'piece') }}
+  {% for coord, window in windows.items() %}
+    {{ grid_pattern(window.grid, 'piece') }}
+    {% for piece in window.possible_pieces %}
+      {{ grid_pattern(piece.grid, 'piece') }}
+    {% endfor %}
   {% endfor %}
   
   <h3>Pieces</h3>
   {% for piece in pieces %}
     {{ grid_pattern(piece.grid, 'piece') }}
     {% for orient in piece.orients %}
-      {{ grid_pattern(orient, 'piece') }}
+      {{ grid_pattern(orient.grid, 'piece') }}
     {% endfor %}
     <p>Done</p>
   {% endfor %}

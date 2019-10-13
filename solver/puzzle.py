@@ -63,17 +63,17 @@ def get_pieces():
     pos = p['positions'] if 'positions' in p.keys() else 4
     piece['positions'] = pos
     
-    grid = piece['grid']
+    # grid = piece['grid']
     
     orients = []
     
     if pos != 1:
       if pos == 2:
-        orients.append(get_rotated(grid, 90))
+        orients.append(get_rotated(piece, 90))
       elif pos == 4:
-        r180 = get_rotated(grid, 180)
+        r180 = get_rotated(piece, 180)
         orients = [
-          get_rotated(grid, 90),
+          get_rotated(piece, 90),
           r180,
           get_rotated(r180, 90)
         ]
@@ -99,6 +99,7 @@ def get_pattern_and_stats(s):
   cell_type = 'r'
   
   edges_done = False
+  cell_coord_list = []
   
   if type(s) is str:
     cell_str_len = 3
@@ -140,6 +141,7 @@ def get_pattern_and_stats(s):
       cell = None
       if coord in cells:
         cell = cells[coord]
+        coord_to_enlist = coord
         if min_y or min_x:
           rel_coord_pair = [
             cell['coord_pair'][0] - min_y,
@@ -147,7 +149,11 @@ def get_pattern_and_stats(s):
           ]
           
           cell['rel_coord_pair'] = rel_coord_pair
-          cell['rel_coord'] = str(rel_coord_pair[0]) + str(rel_coord_pair[1])
+          rel_coord = str(rel_coord_pair[0]) + str(rel_coord_pair[1])
+          cell['rel_coord'] = rel_coord
+          coord_to_enlist = rel_coord
+          
+        cell_coord_list.append(coord_to_enlist + cell['color'])
       
       row.append(cell)
     grid.append(row)
@@ -168,6 +174,7 @@ def get_pattern_and_stats(s):
     'type': cell_type,
     'colored_cells_cnt': colored_cells_cnt,
     'min_coords': [min_y, min_x],
+    'cell_coord_list': cell_coord_list,
     # 'perimeter': perimeter,
     # 'deviation_index': deviation_index,
     # 'orientations': orientations
@@ -604,8 +611,9 @@ def get_edge_grid(grid):
   return edge_grid
 
 
-
-def get_rotated(grid, rotation):
+# TODO: dirtied with a cell_coord_list for perf, but now returns different than input
+def get_rotated(piece, rotation, get_list=True):
+    grid = piece['grid']
     l = len(grid[0])
     h = len(grid)
 
@@ -621,6 +629,7 @@ def get_rotated(grid, rotation):
     
     import copy
     rotated_grid = []
+    cell_coord_list = []
     
     ir = 0
     for i in first_range:  
@@ -636,13 +645,19 @@ def get_rotated(grid, rotation):
             b['coord_pair'] = [ir, jr]
             b['coord'] = str(ir) + str(jr)
             b['edges'] = get_edges(b['edges'])
+            
+            if get_list: 
+              cell_coord_list.append(b['coord'] + b['color'])
         row.append(b)
         jr += 1
         
       rotated_grid.append(row)
       ir += 1
       
-    return rotated_grid
+    return {
+      'grid': rotated_grid,
+      'cell_coord_list': cell_coord_list
+    }
     
 
 
