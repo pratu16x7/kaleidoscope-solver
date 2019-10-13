@@ -611,7 +611,7 @@ def get_rotated(grid, rotation):
 
     if rotation == 90:
         first_range = range(l)
-        second_range = range(h)
+        second_range = range(h - 1, -1, -1)
         get_edges = lambda x: x[1:] + x[0]
         
     elif rotation == 180:
@@ -643,4 +643,185 @@ def get_rotated(grid, rotation):
       ir += 1
       
     return rotated_grid
+    
+
+
+# def get_windows(patt):
+#   return get_best_hori_windows(patt) + get_best_hori_windows(get_rotated(patt, 90))
+
+
+MIN_WINDOW_CELLS = 4
+MIN_WINDOW_EDGES = 5
+
+
+
+# window recalc is cheaper
+# Also take into account the hole full cell count, 
+#   And the available pieces
+#   so you know the next expectant piece counts 
+# TODO:
+# Edges filter only for wide distributions of window stats (big, polygonal holes)
+#   and for places there are weird areas
+#   yep, only for big holes, where you have 
+#   so many cells so you have to filter by edge density
+
+def get_valid_windows(patt):
+  h = len(patt)
+  w = len(patt[0])
+  
+  valid_windows = []
+  
+  cell_grid = []
+  edge_count_grid = []
+  
+  for i in range(h):
+    cells = []
+    edge_counts = []
+    for j in range(w):
+      cell = patt[i][j]
+      if cell:
+        cells.append(1)
+        edge_count = cell['edges'].count('1')
+        edge_counts.append(edge_count)
+      else:
+        cells.append(0)
+        edge_counts.append(0)
+        
+    cell_grid.append(cells)
+    edge_count_grid.append(edge_counts)
+  
+  # horizontal windows
+  w_2x3_width = 3
+  w_2x3_height = 2
+  w_3x2_width = 2
+  w_3x2_height = 3
+  
+  hori_cell_2_grads = []
+  hori_cell_3_grads = []
+  
+  for i in range(h - w_2x3_height + 1):
+    grad_2_row = []
+    grad_3_row = [] if i < h - w_2x3_height else None
+    
+    for j in range(w): 
+      sum_2 = cell_grid[i][j] + cell_grid[i+1][j]
+      grad_2_row.append(sum_2)
+      
+      if type(grad_3_row) is list:
+        sum_3 = sum_2 + cell_grid[i+2][j]
+        grad_3_row.append(sum_3)
+        
+    hori_cell_2_grads.append(grad_2_row)
+    
+    if type(grad_3_row) is list:
+      hori_cell_3_grads.append(grad_3_row)
+      
+  
+  valid_windows = []
+  
+  # TODO: justify min_window_cells for this hole general windows
+  
+  # w - w_2x3_width + 1
+  cell_sums_wide = []
+  
+  for i in range(h - w_2x3_height + 1):
+    grad_wide_sums = []
+    # next_sum = None
+    for j in range(w - w_2x3_width + 1):
+      this_sum = hori_cell_2_grads[i][j] + hori_cell_2_grads[i][j+1] + hori_cell_2_grads[i][j+2]
+      if this_sum >= MIN_WINDOW_CELLS:
+        valid_windows.append(str(i) + str(j) + 'h')
+      else:
+        this_sum = 0
+      grad_wide_sums.append(this_sum)
+      
+    cell_sums_wide.append(grad_wide_sums)
+    
+  cell_sums_long = []
+  
+  for i in range(h - w_3x2_height + 1):
+    grad_long_sums = []
+    # next_sum = None
+    for j in range(w - w_3x2_width + 1):
+      this_sum = hori_cell_3_grads[i][j] + hori_cell_3_grads[i][j+1]
+      if this_sum >= MIN_WINDOW_CELLS:
+        valid_windows.append(str(i) + str(j) + 'v')
+      else:
+        this_sum = 0
+      grad_long_sums.append(this_sum)
+      
+    cell_sums_long.append(grad_long_sums)
+  
+  # print(cell_grid)
+  # print(edge_count_grid)
+  # print('')
+  # print(hori_cell_2_grads)
+  # print(hori_cell_3_grads)
+  # print('')
+  # print(cell_sums_wide)
+  # print(cell_sums_long)
+  
+  # return ['34h', '26v']
+  
+  return valid_windows
+  
+  
+
+def get_window_props(window):
+  pass
+  
+
+
+def get_best_hori_windows(patt):
+    l = len(patt[0])
+    h = len(patt)
+    
+    # [0, 0], [0, 1]
+    # [3, 0], [3, 1]
+    w_size = HORI_WINDOW_SIZE 
+  
+    wl, wh = w_size
+  
+    c_range = range(l - wl + 1) 
+    offset_c = h - wh
+  
+    start_coords = [[0, c] for c in c_range]
+    end_coords = [[offset_c, c] for c in c_range]
+    
+    # TODO: shift window down if >= half empty
+  
+    windows = [get_window(patt, c, w_size) for c in start_coords + end_coords]
+
+    return windows
+
+    
+def get_window(patt, coord, size):
+    # DONT GET ACTUAL WINDOW
+    # JUST THE COORDS AND LIMITS
+    # you'lll anyway scan the entire extracted window to calc
+    # better simple calc while scanning first time, just read and record in a separate map
+    
+    # so that we can update the state in the hole itself and everything else will reflect auto
+  
+    l, h = size
+    y0, x0 = coord
+    
+    import copy
+
+    def offset_coords(row):
+        new_row = []
+        for block in row:
+            b = None
+            if block:
+                b = copy.copy(block)
+                c = b['coord']
+                b['coord'] = [c[0] - y0, c[1] - x0]
+            new_row.append(b)
+        return new_row
+        
+    window_grid = [offset_coords(patt[row_no][x0:x0+l]) for row_no in range(y0, y0+h)]
+    return {
+        'grid': window_grid,
+        'coord': coord
+    }
     

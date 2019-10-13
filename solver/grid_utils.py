@@ -299,29 +299,7 @@ def gen_obj_grid(points):
         
     return obj_grid
     
-    
-def get_window(patt, coord, size):
-    l, h = size
-    y0, x0 = coord
-    
-    import copy
 
-    def offset_coords(row):
-        new_row = []
-        for block in row:
-            b = None
-            if block:
-                b = copy.copy(block)
-                c = b['coord']
-                b['coord'] = [c[0] - y0, c[1] - x0]
-            new_row.append(b)
-        return new_row
-        
-    window_grid = [offset_coords(patt[row_no][x0:x0+l]) for row_no in range(y0, y0+h)]
-    return {
-        'grid': window_grid,
-        'coord': coord
-    }
     
     
 def get_90_rotated(patt):
@@ -400,6 +378,29 @@ def get_x_direction_windows(patt):
 
     return windows
 
+    
+def get_window(patt, coord, size):
+    l, h = size
+    y0, x0 = coord
+    
+    import copy
+
+    def offset_coords(row):
+        new_row = []
+        for block in row:
+            b = None
+            if block:
+                b = copy.copy(block)
+                c = b['coord']
+                b['coord'] = [c[0] - y0, c[1] - x0]
+            new_row.append(b)
+        return new_row
+        
+    window_grid = [offset_coords(patt[row_no][x0:x0+l]) for row_no in range(y0, y0+h)]
+    return {
+        'grid': window_grid,
+        'coord': coord
+    }
 
 def get_all_options(patt, shapes):
     options = []

@@ -46,6 +46,11 @@
     {{ grid_pattern(hole.grid, 'piece') }}
   {% endfor %}
   
+  <h3>Windows</h3>
+  {% for window in scans %}
+    {{ grid_pattern(window, 'piece') }}
+  {% endfor %}
+  
   <h3>Pieces</h3>
   {% for piece in pieces %}
     {{ grid_pattern(piece.grid, 'piece') }}

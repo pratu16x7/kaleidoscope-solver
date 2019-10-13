@@ -61,7 +61,7 @@ PIECES = [
   },
   {
     'name': 'z_right',
-    'val': '00x01r11x12r'
+    'val': '01x02r10x11r'
   },
   
   # Square (4-2-2 deviation)
