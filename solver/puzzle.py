@@ -55,6 +55,16 @@ from data import PIECES
 #########################################################################
 
 
+
+# pieces should be queriable, and only the name of pieces stored for any list
+# every single piece by name and orientation
+# So a separate list holds the orientation, special name, grid and coord list for every pices
+# The master list holds actual piece orient-independent info
+# This is the one removed from available in the case of deleting a piece
+
+
+
+
 def get_pieces():
   pieces = []
   for p in PIECES:
@@ -745,7 +755,7 @@ def get_valid_windows(patt):
     for j in range(w - w_2x3_width + 1):
       this_sum = hori_cell_2_grads[i][j] + hori_cell_2_grads[i][j+1] + hori_cell_2_grads[i][j+2]
       if this_sum >= MIN_WINDOW_CELLS:
-        valid_windows.append(str(i) + str(j) + 'h')
+        valid_windows.append([str(i) + str(j) + 'h', this_sum])
       else:
         this_sum = 0
       grad_wide_sums.append(this_sum)
@@ -760,7 +770,7 @@ def get_valid_windows(patt):
     for j in range(w - w_3x2_width + 1):
       this_sum = hori_cell_3_grads[i][j] + hori_cell_3_grads[i][j+1]
       if this_sum >= MIN_WINDOW_CELLS:
-        valid_windows.append(str(i) + str(j) + 'v')
+        valid_windows.append([str(i) + str(j) + 'v', this_sum])
       else:
         this_sum = 0
       grad_long_sums.append(this_sum)

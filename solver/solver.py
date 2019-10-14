@@ -92,13 +92,13 @@ class Solver:
     
     import copy
     
-    for window in windows:
+    for win in windows:
+      window, no_of_cells = win
       coord = window[:2]
       y, x = int(coord[0]), int(coord[1])
       h, w = (2, 3) if window[2] == 'h' else (3, 2)
       
       grid = []
-      no_of_cells = 0
       cell_coord_list = []
       for i in range(y, y + h):
         grid_row = []
@@ -123,14 +123,18 @@ class Solver:
       # Piece shortlisting
       possible_pieces = []
       
-      for piece in self.pieces:
-        # print('is?')
-        if piece['size'] > no_of_cells and piece['size'] >= min_cell_count:
-          # print('yaya')
-          for orient in [piece] + piece['orients']:
-            if set(piece['cell_coord_list']).issubset(cell_coord_list):
-              possible_pieces.append(piece)
-    
+      
+      # # TODO: Looks like pieces should only be stores as nameandorient, and referenced as such
+      # # Not moved around in person
+      # for piece in self.pieces:
+      #   print('is?', piece['size'], no_of_cells)
+      #   if piece['size'] <= no_of_cells and piece['size'] >= min_cell_count:
+      #     print('yaya')
+      #     for orient in [piece] + piece['orients']:
+      #       if set(piece['cell_coord_list']).issubset(cell_coord_list):
+      #         possible_pieces.append(piece)
+
+
       window_index[window] = {
         'coord': coord,
         'coord_pair': [y, x],
@@ -142,6 +146,8 @@ class Solver:
         
         'possible_pieces': possible_pieces
       }
+      
+      print('poss', cell_coord_list, possible_pieces)
       
       
     return window_index
