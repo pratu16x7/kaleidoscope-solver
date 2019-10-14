@@ -6,6 +6,11 @@ from puzzle import get_board_from_img
 
 app = Flask(__name__)
 
+
+from solver import Puzzle
+puzzle = Puzzle()
+app.jinja_env.globals.update(get_piece=puzzle.get_piece)
+
 @app.route('/')
 def home():
   pattern_img = get_pattern_img()
@@ -13,16 +18,21 @@ def home():
   
   # TODO: get only the string of the board from img,
   # do everything else via the solver
+  
   solver = Solver(board)
+
+  
   
   windows = solver.solve()
   
   # print(windows)
   
+  
+  
   return render_template('home.html', 
     data=solver.board, 
     holes=solver.holes, 
-    pieces=solver.pieces,
+    piece_sets=solver.get_piece_sets(),
     windows=windows
   )
   

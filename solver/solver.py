@@ -18,14 +18,47 @@ from puzzle import get_pieces, get_holes_and_stats, get_valid_windows
 # TODO: Second tryouts, multiple playthroughs
 # i.e hook up all of the best possible choices at every stage to the hook
 
+class Puzzle:
+  def __init__(self):
+    # pieces = 
+    self.pieces_registry, self.orients_registry = get_pieces()
+    # self.orients_registry = get_orients(pieces)
+    
+  # get_piece('l4_left_r-0')
+
+  def get_piece_info(self, name):
+    return self.pieces_registry[name]
+    
+  def get_orients(self, name):
+    return self.orients_registry[name]
+    
+  def get_piece(self, name, orient):
+    # name, orient = piece_id.split('-')
+    orient = int(orient)
+    return self.orients_registry[name][orient]
+    
+  def get_pieces(self):
+    return self.pieces_registry.keys()
+    
+  def get_piece_sets(self, names=[]):
+    if not names:
+      names = self.get_pieces()
+    return [self.get_orients(name) for name in names]
+    
+    
+
 class Solver:
   def __init__(self, board):
+    
+    self.puzzle = Puzzle()
+    self.pieces = self.puzzle.get_pieces()
+    
+    
     self.board = board
     
     
     # TODO: You have to make per state copies of these
     self.holes = get_holes_and_stats(board['grid'])
-    self.pieces = get_pieces()
     
     
     # this is only per state
@@ -57,7 +90,8 @@ class Solver:
     # Now solve smallest hole first
     # just display the possible pieces on every step
 
-    
+  def get_piece_sets(self, names=[]):
+    return self.puzzle.get_piece_sets(names)
     
   def solve(self):
     
@@ -124,15 +158,15 @@ class Solver:
       possible_pieces = []
       
       
-      # # TODO: Looks like pieces should only be stores as nameandorient, and referenced as such
-      # # Not moved around in person
-      # for piece in self.pieces:
-      #   print('is?', piece['size'], no_of_cells)
-      #   if piece['size'] <= no_of_cells and piece['size'] >= min_cell_count:
-      #     print('yaya')
-      #     for orient in [piece] + piece['orients']:
-      #       if set(piece['cell_coord_list']).issubset(cell_coord_list):
-      #         possible_pieces.append(piece)
+      # TODO: Looks like pieces should only be stores as nameandorient, and referenced as such
+      # Not moved around in 
+      for name in self.pieces:
+        info = self.puzzle.get_piece_info(name)
+        if info['size'] <= no_of_cells and info['size'] >= min_cell_count:
+          orients = self.puzzle.get_orients(name)
+          for idx, orient in enumerate(orients):
+            if set(orient['cell_coord_list']).issubset(cell_coord_list):
+               possible_pieces.append([name, idx])
 
 
       window_index[window] = {
@@ -146,8 +180,6 @@ class Solver:
         
         'possible_pieces': possible_pieces
       }
-      
-      print('poss', cell_coord_list, possible_pieces)
       
       
     return window_index

@@ -66,32 +66,34 @@ from data import PIECES
 
 
 def get_pieces():
-  pieces = []
+  pieces_reg = {}
+  orients_reg = {}
   for p in PIECES:
     piece = get_pattern_and_stats(p['val'])
-    piece['name'] = p['name']
+    name = p['name']
+    piece['name'] = name
     pos = p['positions'] if 'positions' in p.keys() else 4
     piece['positions'] = pos
-    
-    # grid = piece['grid']
-    
-    orients = []
+  
+    orients = [{
+      'grid': piece['grid'],
+      'cell_coord_list': piece['cell_coord_list']
+    }]
     
     if pos != 1:
       if pos == 2:
         orients.append(get_rotated(piece, 90))
       elif pos == 4:
         r180 = get_rotated(piece, 180)
-        orients = [
+        orients = orients + [
           get_rotated(piece, 90),
           r180,
           get_rotated(r180, 90)
         ]
-
-    piece['orients'] = orients
     
-    pieces.append(piece)
-  return pieces
+    pieces_reg[name] = piece
+    orients_reg[name] = orients
+  return pieces_reg, orients_reg
     
   
 # ***
@@ -180,11 +182,12 @@ def get_pattern_and_stats(s):
   
   return {
     'grid': grid,
+    'cell_coord_list': cell_coord_list,
+    
     'size': len(cells),
     'type': cell_type,
     'colored_cells_cnt': colored_cells_cnt,
     'min_coords': [min_y, min_x],
-    'cell_coord_list': cell_coord_list,
     # 'perimeter': perimeter,
     # 'deviation_index': deviation_index,
     # 'orientations': orientations

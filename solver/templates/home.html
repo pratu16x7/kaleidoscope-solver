@@ -50,16 +50,16 @@
   {% for coord, window in windows.items() %}
     {{ grid_pattern(window.grid, 'piece') }}
     {% for piece in window.possible_pieces %}
-      {{ grid_pattern(piece.grid, 'piece') }}
+      {{ piece }}
+      {{ grid_pattern(get_piece(piece[0], piece[1]).grid, 'piece') }}
     {% endfor %}
-    <p>hole done</p>
+    <p>-------</p>
   {% endfor %}
   
   <h3>Pieces</h3>
-  {% for piece in pieces %}
-    {{ grid_pattern(piece.grid, 'piece') }}
-    {% for orient in piece.orients %}
-      {{ grid_pattern(orient.grid, 'piece') }}
+  {% for piece_set in piece_sets %}
+    {% for piece in piece_set %}
+      {{ grid_pattern(piece.grid, 'piece') }}
     {% endfor %}
     <p>Done</p>
   {% endfor %}
