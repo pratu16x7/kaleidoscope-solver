@@ -10,7 +10,7 @@
 
 
 
-from puzzle import get_pieces, get_holes_and_stats, get_valid_windows, get_piece_to_window_edge_scores
+from puzzle import get_pieces, get_holes_and_stats, get_valid_windows, get_piece_to_window_edge_scores, DIR_OPS, DIR_REVS
 
 
 
@@ -93,9 +93,7 @@ class Solver:
   def get_piece_sets(self, names=[]):
     return self.puzzle.get_piece_sets(names)
     
-  def solve(self):
-    
-    hole = self.holes['1hole']['grid']
+  def solve(self, hole):
     
     # Keep updating hole state and call this window again
     windows = get_valid_windows(hole) 
@@ -167,12 +165,14 @@ class Solver:
         if info['size'] <= no_of_cells and info['size'] >= min_cell_count:
           orients = self.puzzle.get_orients(name)
           for idx, orient in enumerate(orients):
-            if set(orient['cell_coord_list']).issubset(cell_coord_list):
+            piece_cell_list = orient['cell_coord_list']
+            if set(piece_cell_list).issubset(cell_coord_list):
                piece_grid = orient['grid']
                scores, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
                piece_data = {
                  'name': name,
                  'orient': idx,
+                 'cell_coord_list': piece_cell_list,
                  'scores': scores,
                  'window_id': window_id,
                  'open_edges': open_edges,
@@ -199,27 +199,42 @@ class Solver:
     
     all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][-1], reverse=True)
     highest_scoring_piece = all_possible_pieces[0]
-
     
-      
-    return window_index
-      
-      
-      
-      
-      
-    # Next up solving:
+    selected_window = window_index[highest_scoring_piece['window_id']]
     
-    # Rarer pieces get a 0.5 - 0.95 (< 1) edge point boost, 
+    
+    changed_hole = copy.deepcopy(hole)
+    wy, wx = selected_window['coord_pair']
+    open_edges = highest_scoring_piece['open_edges']
+    
+    
+    for coord_t in highest_scoring_piece['cell_coord_list']:
+      cy, cx = int(coord_t[0]), int(coord_t[1])
+      y, x = wy + cy, wx + cx
+      changed_hole[y][x] = None
+      
+      coord = coord_t[:2]
+      if coord in open_edges:
+        for edge_idx in open_edges[coord]:
+          dy, dx = DIR_OPS[edge_idx]
+          cell_to_change = changed_hole[y + dy][x + dx]
+          
+          change_edge_idx = DIR_REVS[edge_idx]
+          edge_list = list(cell_to_change['edges'])
+          edge_list[change_edge_idx] = '1'
+          cell_to_change['edges'] = "".join(edge_list)
+      
+    return window_index, changed_hole
+    
+    
+    # TODO: Rarer pieces get a 0.5 - 0.95 (< 1) edge point boost, 
     # so that if a rare and a simple have two edges open
     # The rarer one triumphs with a half point
     # But if it's a whole edge difference, the simple one is clear winner
     # In other words, Rarity is a Tie-Breaker, not a one edge extra up
     # Probably only for very high scores though
     # for lower scores (like rare 4 edge open) might be better to simply
-    # favour the rare one blindly 
-    
-    
+    # favour the rare one blindly
     
     
     # TODO: also a window for the small wand has to be scanned every move

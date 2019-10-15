@@ -23,7 +23,8 @@ def home():
 
   
   
-  windows = solver.solve()
+  windows, changed_hole = solver.solve(solver.holes['1hole']['grid'])
+  windows2, changed_hole2 = solver.solve(changed_hole)
   
   # print(windows)
   
@@ -33,7 +34,9 @@ def home():
     data=solver.board, 
     holes=solver.holes, 
     piece_sets=solver.get_piece_sets(),
-    windows=windows
+    windows=windows,
+    changed_hole=changed_hole,
+    changed_hole2=changed_hole2
   )
   
 if __name__ == "__main__":

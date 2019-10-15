@@ -45,6 +45,10 @@
   {% for key, hole in holes.items() %}
     {{ grid_pattern(hole.grid, 'piece') }}
   {% endfor %}
+  <p>-------</p>
+  {{ grid_pattern(holes['1hole']['grid'], 'piece') }}
+  {{ grid_pattern(changed_hole, 'piece') }}
+  {{ grid_pattern(changed_hole2, 'piece') }}
   
   <h3>Windows</h3>
   {% for coord, window in windows.items() %}

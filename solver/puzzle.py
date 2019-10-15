@@ -62,7 +62,9 @@ from data import PIECES
 # The master list holds actual piece orient-independent info
 # This is the one removed from available in the case of deleting a piece
 
-
+# uldr
+DIR_OPS = [[-1,0], [0, -1], [1, 0], [0, 1]]
+DIR_REVS = [2, 3, 0, 1]
 
 
 def get_pieces():
@@ -534,12 +536,9 @@ def get_holes(grid):
       
       edges = cell[2:]
       
-      # ulrd
-      dir_ops = [[-1,0], [0, -1], [1, 0], [0, 1]]
-      
       for idx, is_edge in enumerate(edges):
         if is_edge == '0':
-          dir_op = dir_ops[idx-1]
+          dir_op = DIR_OPS[idx-1]
           new_y = y + dir_op[0]
           new_x = x + dir_op[1]
           
