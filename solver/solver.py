@@ -10,7 +10,16 @@
 
 
 
-from puzzle import get_pieces, get_holes_and_stats, get_valid_windows, get_piece_to_window_edge_scores, DIR_OPS, DIR_REVS
+from puzzle import (
+  get_pieces, 
+  get_piece_size_progression, 
+  get_holes_and_stats, 
+  get_valid_windows, 
+  get_piece_to_window_edge_scores, 
+  get_cell_count, 
+  DIR_OPS, 
+  DIR_REVS
+)
 
 
 
@@ -83,44 +92,51 @@ class Solver:
     
     # this is per hole
     
-    
-    
     # go though the holes to see if area <= 4, Those are already solved
     # go through the holes to see which ones can house magic wand
     # Now solve smallest hole first
     # just display the possible pieces on every step
+    
+  
 
   def get_piece_sets(self, names=[]):
     return self.puzzle.get_piece_sets(names)
     
-  def solve(self, hole, next_expected_count=4):
+    
+  # TODO: will be based on the game state 
+  def get_next_move():
+    pass
+    
+    
+  def solve_hole(self, hole):
+    solution_progression = []
+
+    current_hole = hole['grid']
+
+    cell_count = get_cell_count(current_hole)
+    piece_size_progression = get_piece_size_progression(cell_count)
+    
+    # TODO: For testing on more cases, remove once done
+    print(piece_size_progression)
+
+    while get_cell_count(current_hole):
+      next_expected_count = piece_size_progression.pop(0)
+      winner, score_card, current_hole = self.get_best_hole_move(current_hole, next_expected_count)
+      solution_progression.append([winner, score_card, current_hole])
+      
+    return solution_progression
+    
+    
+  def get_best_hole_move(self, hole, next_expected_count=4):
     
     # Keep updating hole state and call this window again
+    
     windows = get_valid_windows(hole) 
     # Take note of the size of window and available pieces to get the possible window cell count combinations
     
-    window_index = {
-      # 'coord_n_type': {
-      #   'coord': '',
-      #   'coord_pair': [],
-      #   'type': '', # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
-      #   'no_of_cells': 0,
-      #   'no_of_edges': 0,
-      #
-      #   # after inital filter
-      #   'possible_pieces': [
-      #     # pieces with respective scores
-      #     # and open edges if this piece is selected
-      #   ],
-      #
-      #   # NOT
-      #   # from before itself, or after this window is selected
-      #   'connecting_valid_windows': []
-      # }
-    }
-    
     import copy
     
+    window_index = {}
     all_possible_pieces = []
     
     # TODO: Special case for the square tile, and all the smaller ones
@@ -181,6 +197,7 @@ class Solver:
                  'cell_coord_list': piece_cell_list,
                  'scores': scores,
                  'window_id': window_id,
+                 'coord_pair': [y, x],
                  'open_edges': open_edges,
                }
                possible_pieces.append(piece_data)
@@ -192,7 +209,7 @@ class Solver:
       window_index[window_id] = {
         'coord': coord,
         'coord_pair': [y, x],
-        'type': window_id[2],
+        'type': window_id[2],  # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
         
         'grid': window,
         'no_of_cells': no_of_cells,
@@ -229,7 +246,7 @@ class Solver:
           edge_list[change_edge_idx] = '1'
           cell_to_change['edges'] = "".join(edge_list)
       
-    return window_index, changed_hole, highest_scoring_piece
+    return highest_scoring_piece, window_index, changed_hole
     
     
     # TODO: Rarer pieces get a 0.5 - 0.95 (< 1) edge point boost, 
@@ -238,7 +255,7 @@ class Solver:
     # But if it's a whole edge difference, the simple one is clear winner
     # In other words, Rarity is a Tie-Breaker, not a one edge extra up
     # Probably only for very high scores though
-    # for lower scores (like rare 4 edge open) might be better to simply
+    # for lower scores (like a rare with 4 edges open) might be better to simply
     # favour the rare one blindly
     
     

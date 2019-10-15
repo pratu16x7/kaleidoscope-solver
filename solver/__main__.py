@@ -22,28 +22,17 @@ def home():
   solver = Solver(board)
 
   
-  
-  window_index, changed_hole, winner = solver.solve(solver.holes['1hole']['grid'], 4)
-  window_index2, changed_hole2, winner2 = solver.solve(changed_hole, 4)
-  window_index3, changed_hole3, winner3 = solver.solve(changed_hole2, 3)
-  
-  # print(windows)
-  
-  
+  hole = solver.holes['1hole']
+  solution_progression = solver.solve_hole(hole)
   
   return render_template('home.html', 
     data=solver.board, 
     holes=solver.holes, 
     piece_sets=solver.get_piece_sets(),
-    window_index=window_index,
+    window_index=solution_progression[0][1],
     
-    changed_hole=changed_hole,
-    changed_hole2=changed_hole2,
-    changed_hole3=changed_hole3, 
-    
-    winner=winner,
-    winner2=winner2,
-    winner3=winner3,
+    hole=hole['grid'],
+    solution_progression=solution_progression,
   )
   
 if __name__ == "__main__":

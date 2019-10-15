@@ -46,16 +46,14 @@
     {{ grid_pattern(hole.grid, 'piece') }}
   {% endfor %}
   <p>-------</p>
-  {{ grid_pattern(holes['1hole']['grid'], 'piece') }}
-  {{ grid_pattern(get_piece(winner['name'], winner['orient']).grid, 'piece') }}
-  {{ winner }}
-  {{ grid_pattern(changed_hole, 'piece') }}
-  {{ grid_pattern(get_piece(winner2['name'], winner2['orient']).grid, 'piece') }}
-  {{ winner2 }}
-  {{ grid_pattern(changed_hole2, 'piece') }}
-  {{ grid_pattern(get_piece(winner3['name'], winner3['orient']).grid, 'piece') }}
-  {{ winner3 }}
-  {{ grid_pattern(changed_hole3, 'piece') }}
+  
+  {{ grid_pattern(hole, 'piece') }}
+  
+  {% for move in solution_progression %}
+    {{ move[0] }}
+    {{ grid_pattern(get_piece(move[0]['name'], move[0]['orient']).grid, 'piece') }}
+    {{ grid_pattern(move[2], 'piece') }}
+  {% endfor %}
   
   <h3>Windows</h3>
   {% for coord, window in window_index.items() %}

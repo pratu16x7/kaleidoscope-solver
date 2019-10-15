@@ -98,6 +98,34 @@ def get_pieces():
   return pieces_reg, orients_reg
 
 
+def get_piece_size_progression(cell_count):
+  # Level 1: No. of blocks to get big picture of which available pieces add up to it
+  #   break down into number of pieces, first all 4s, the 3s/2s+1s
+  #   if multiple of 4, the first choice 4s
+  #   if not, 3s chance higher: 3 + 3 more likely than 4 + 2
+  
+  piece_size_progression = []
+  
+  if cell_count % 4 == 0:
+    piece_size_progression = [4] * (cell_count/4)
+  elif cell_count % 2 == 0:
+    if cell_count > 2:
+      # has a 6 in there, first choice 3 + 3, rather than 4 + 2
+      mult_4 = cell_count - 6
+      piece_size_progression = [4] * (mult_4/4) + [3, 3]
+    else:
+      # 2, then 1 + 1
+      piece_size_progression = [2]
+      
+  else:
+    # odd
+    remainder = cell_count % 4
+    piece_size_progression = [4] * int(cell_count/4) + [remainder]
+    
+  return piece_size_progression
+    
+    
+
 def get_piece_to_window_edge_scores(piece, window):
   shape_edges_count = 0
   matched_edges_count = 0
@@ -262,6 +290,13 @@ def add_edges_to_grid_data(grid):
   return grid
   
   
+def get_cell_count(this_hole):
+  size = 0
+  for row in this_hole:
+    for cell in row:
+      if cell:
+        size += 1
+  return size
 
 
 
