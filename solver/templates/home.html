@@ -51,7 +51,7 @@
     {{ grid_pattern(window.grid, 'piece') }}
     {% for piece in window.possible_pieces %}
       {{ piece }}
-      {{ grid_pattern(get_piece(piece[0], piece[1]).grid, 'piece') }}
+      {{ grid_pattern(get_piece(piece[1], piece[2]).grid, 'piece') }}
     {% endfor %}
     <p>-------</p>
   {% endfor %}

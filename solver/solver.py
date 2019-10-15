@@ -10,7 +10,7 @@
 
 
 
-from puzzle import get_pieces, get_holes_and_stats, get_valid_windows
+from puzzle import get_pieces, get_holes_and_stats, get_valid_windows, get_piece_to_window_edge_scores
 
 
 
@@ -127,15 +127,15 @@ class Solver:
     import copy
     
     for win in windows:
-      window, no_of_cells = win
-      coord = window[:2]
+      window_id, no_of_cells = win
+      coord = window_id[:2]
       y, x = int(coord[0]), int(coord[1])
-      h, w = (2, 3) if window[2] == 'h' else (3, 2)
+      h, w = (2, 3) if window_id[2] == 'h' else (3, 2)
       
-      grid = []
+      window = []
       cell_coord_list = []
       for i in range(y, y + h):
-        grid_row = []
+        window_row = []
         for j in range(x, x + w):
           cell = copy.copy(hole[i][j])
           if cell:
@@ -149,9 +149,9 @@ class Solver:
             
             cell_coord_list.append(cell['rel_coord'] + cell['color'])
           
-          grid_row.append(cell) 
+          window_row.append(cell) 
 
-        grid.append(grid_row)
+        window.append(window_row)
         
         
       # Piece shortlisting
@@ -166,15 +166,18 @@ class Solver:
           orients = self.puzzle.get_orients(name)
           for idx, orient in enumerate(orients):
             if set(orient['cell_coord_list']).issubset(cell_coord_list):
-               possible_pieces.append([name, idx])
+               piece_grid = orient['grid']
+               scores = get_piece_to_window_edge_scores(piece_grid, window)
+               possible_pieces.append([window_id, name, idx, scores])
+               # store open edges and keep: wherever piece had an edge and window had open edge
 
 
-      window_index[window] = {
+      window_index[window_id] = {
         'coord': coord,
         'coord_pair': [y, x],
-        'type': window[2],
+        'type': window_id[2],
         
-        'grid': grid,
+        'grid': window,
         'no_of_cells': no_of_cells,
         'cell_coord_list': cell_coord_list,
         

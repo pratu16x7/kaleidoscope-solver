@@ -94,7 +94,49 @@ def get_pieces():
     pieces_reg[name] = piece
     orients_reg[name] = orients
   return pieces_reg, orients_reg
-    
+
+
+def get_piece_to_window_edge_scores(piece, window):
+  shape_edges_count = 0
+  matched_edges_count = 0
+  window_edges_count = 0 
+  
+  open_edges = []
+           
+  for row in window:
+      for block in row:
+          if block:
+              window_edges_count += len(block['edges'])
+              # if len(piece[0]) >= block['coord'][1] + 1:
+              # TODO: needs custom rules for how a square 
+              # (or a smaller piece than window) 
+              # should be placed
+              piece_cell = piece[block['rel_coord_pair'][0]][block['rel_coord_pair'][1]]
+              if piece_cell:
+                  for idx, edge in enumerate(piece_cell['edges']):
+                      if edge == '1':
+                          shape_edges_count += 1
+                      if block['edges'][idx] == '1':
+                          window_edges_count += 1
+                      if edge == '1' and block['edges'][idx] == '1':
+                          matched_edges_count += 1 
+            
+  w_match = matched_edges_count/window_edges_count 
+  s_match = matched_edges_count/shape_edges_count
+  w_x_s = w_match * s_match 
+  
+  # return {
+  #     # 'SE': shape_edges_count,
+  #     # 'WE': window_edges_count,
+  #     # 'ME': matched_edges_count,
+  #     #
+  #     # 'W_MATCH': w_match,
+  #     # 'S_MATCH': s_match,
+  #     'W_X_S': w_x_s,
+  # }
+
+  scores = [matched_edges_count, w_match, s_match, w_x_s, open_edges]
+  return scores
   
 # ***
 def get_pattern_and_stats(s):
@@ -792,64 +834,4 @@ def get_valid_windows(patt):
   # return ['34h', '26v']
   
   return valid_windows
-  
-  
 
-def get_window_props(window):
-  pass
-  
-
-
-def get_best_hori_windows(patt):
-    l = len(patt[0])
-    h = len(patt)
-    
-    # [0, 0], [0, 1]
-    # [3, 0], [3, 1]
-    w_size = HORI_WINDOW_SIZE 
-  
-    wl, wh = w_size
-  
-    c_range = range(l - wl + 1) 
-    offset_c = h - wh
-  
-    start_coords = [[0, c] for c in c_range]
-    end_coords = [[offset_c, c] for c in c_range]
-    
-    # TODO: shift window down if >= half empty
-  
-    windows = [get_window(patt, c, w_size) for c in start_coords + end_coords]
-
-    return windows
-
-    
-def get_window(patt, coord, size):
-    # DONT GET ACTUAL WINDOW
-    # JUST THE COORDS AND LIMITS
-    # you'lll anyway scan the entire extracted window to calc
-    # better simple calc while scanning first time, just read and record in a separate map
-    
-    # so that we can update the state in the hole itself and everything else will reflect auto
-  
-    l, h = size
-    y0, x0 = coord
-    
-    import copy
-
-    def offset_coords(row):
-        new_row = []
-        for block in row:
-            b = None
-            if block:
-                b = copy.copy(block)
-                c = b['coord']
-                b['coord'] = [c[0] - y0, c[1] - x0]
-            new_row.append(b)
-        return new_row
-        
-    window_grid = [offset_coords(patt[row_no][x0:x0+l]) for row_no in range(y0, y0+h)]
-    return {
-        'grid': window_grid,
-        'coord': coord
-    }
-    
