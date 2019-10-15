@@ -169,12 +169,13 @@ class Solver:
           for idx, orient in enumerate(orients):
             if set(orient['cell_coord_list']).issubset(cell_coord_list):
                piece_grid = orient['grid']
-               scores = get_piece_to_window_edge_scores(piece_grid, window)
+               scores, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
                piece_data = {
                  'name': name,
                  'orient': idx,
                  'scores': scores,
                  'window_id': window_id,
+                 'open_edges': open_edges,
                }
                possible_pieces.append(piece_data)
                all_possible_pieces.append(piece_data)
@@ -196,11 +197,10 @@ class Solver:
       
       
     
-    all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][3])
+    all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][-1], reverse=True)
     highest_scoring_piece = all_possible_pieces[0]
+
     
-    
-      
       
     return window_index
       

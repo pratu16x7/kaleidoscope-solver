@@ -144,8 +144,8 @@ def get_piece_to_window_edge_scores(piece, window):
   # }
 
   # NOTE: Plenty of instances where readability is compromised for perf 
-  scores = [matched_edges_count, w_match, s_match, w_x_s, piece_open_edges]
-  return scores
+  scores = [matched_edges_count, w_match, s_match, w_x_s]
+  return scores, piece_open_edges
   
 # ***
 def get_pattern_and_stats(s):
