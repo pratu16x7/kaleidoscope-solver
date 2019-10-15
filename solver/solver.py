@@ -126,6 +126,8 @@ class Solver:
     
     import copy
     
+    all_possible_pieces = []
+    
     for win in windows:
       window_id, no_of_cells = win
       coord = window_id[:2]
@@ -168,7 +170,15 @@ class Solver:
             if set(orient['cell_coord_list']).issubset(cell_coord_list):
                piece_grid = orient['grid']
                scores = get_piece_to_window_edge_scores(piece_grid, window)
-               possible_pieces.append([window_id, name, idx, scores])
+               piece_data = {
+                 'name': name,
+                 'orient': idx,
+                 'scores': scores,
+                 'window_id': window_id,
+               }
+               possible_pieces.append(piece_data)
+               all_possible_pieces.append(piece_data)
+               
                # store open edges and keep: wherever piece had an edge and window had open edge
 
 
@@ -183,6 +193,13 @@ class Solver:
         
         'possible_pieces': possible_pieces
       }
+      
+      
+    
+    all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][3])
+    highest_scoring_piece = all_possible_pieces[0]
+    
+    
       
       
     return window_index

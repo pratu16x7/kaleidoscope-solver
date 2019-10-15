@@ -101,7 +101,8 @@ def get_piece_to_window_edge_scores(piece, window):
   matched_edges_count = 0
   window_edges_count = 0 
   
-  open_edges = []
+  # unmatched piece edges
+  piece_open_edges = {}
            
   for row in window:
       for block in row:
@@ -111,15 +112,22 @@ def get_piece_to_window_edge_scores(piece, window):
               # TODO: needs custom rules for how a square 
               # (or a smaller piece than window) 
               # should be placed
-              piece_cell = piece[block['rel_coord_pair'][0]][block['rel_coord_pair'][1]]
+              coord_pair = block['rel_coord_pair']
+              piece_cell = piece[coord_pair[0]][coord_pair[1]]
               if piece_cell:
+                  open_edges = []
                   for idx, edge in enumerate(piece_cell['edges']):
                       if edge == '1':
                           shape_edges_count += 1
+                          if block['edges'][idx] == '1':
+                              matched_edges_count += 1
+                          else:
+                              open_edges.append(idx)
                       if block['edges'][idx] == '1':
                           window_edges_count += 1
-                      if edge == '1' and block['edges'][idx] == '1':
-                          matched_edges_count += 1 
+                  if open_edges:
+                      piece_open_edges[block['rel_coord']] = open_edges
+                       
             
   w_match = matched_edges_count/window_edges_count 
   s_match = matched_edges_count/shape_edges_count
@@ -135,7 +143,8 @@ def get_piece_to_window_edge_scores(piece, window):
   #     'W_X_S': w_x_s,
   # }
 
-  scores = [matched_edges_count, w_match, s_match, w_x_s, open_edges]
+  # NOTE: Plenty of instances where readability is compromised for perf 
+  scores = [matched_edges_count, w_match, s_match, w_x_s, piece_open_edges]
   return scores
   
 # ***
