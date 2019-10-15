@@ -23,8 +23,9 @@ def home():
 
   
   
-  windows, changed_hole = solver.solve(solver.holes['1hole']['grid'])
-  windows2, changed_hole2 = solver.solve(changed_hole)
+  window_index, changed_hole, winner = solver.solve(solver.holes['1hole']['grid'], 4)
+  window_index2, changed_hole2, winner2 = solver.solve(changed_hole, 4)
+  window_index3, changed_hole3, winner3 = solver.solve(changed_hole2, 3)
   
   # print(windows)
   
@@ -34,9 +35,15 @@ def home():
     data=solver.board, 
     holes=solver.holes, 
     piece_sets=solver.get_piece_sets(),
-    windows=windows,
+    window_index=window_index,
+    
     changed_hole=changed_hole,
-    changed_hole2=changed_hole2
+    changed_hole2=changed_hole2,
+    changed_hole3=changed_hole3, 
+    
+    winner=winner,
+    winner2=winner2,
+    winner3=winner3,
   )
   
 if __name__ == "__main__":

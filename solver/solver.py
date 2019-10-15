@@ -93,14 +93,11 @@ class Solver:
   def get_piece_sets(self, names=[]):
     return self.puzzle.get_piece_sets(names)
     
-  def solve(self, hole):
+  def solve(self, hole, next_expected_count=4):
     
     # Keep updating hole state and call this window again
     windows = get_valid_windows(hole) 
     # Take note of the size of window and available pieces to get the possible window cell count combinations
-    
-    # if desired 3 not there, 3 = 2 + 1 
-    min_cell_count = 4 
     
     window_index = {
       # 'coord_n_type': {
@@ -126,6 +123,8 @@ class Solver:
     
     all_possible_pieces = []
     
+    # TODO: Special case for the square tile, and all the smaller ones
+    # wait, maybe they'll be taken care of anyway. Test and check.
     for win in windows:
       window_id, no_of_cells = win
       coord = window_id[:2]
@@ -157,15 +156,22 @@ class Solver:
       # Piece shortlisting
       possible_pieces = []
       
+      # # TODO: if desired 3 not there, 3 = 2 + 1 
       
       # TODO: Looks like pieces should only be stores as nameandorient, and referenced as such
       # Not moved around in 
       for name in self.pieces:
+        
         info = self.puzzle.get_piece_info(name)
-        if info['size'] <= no_of_cells and info['size'] >= min_cell_count:
+        # next_expected_count for 4-5-6 size windows is always 4 
+        if no_of_cells >= 4:
+           next_expected_count = 4
+        if info['size'] <= no_of_cells and info['size'] >= next_expected_count:
+          
           orients = self.puzzle.get_orients(name)
           for idx, orient in enumerate(orients):
             piece_cell_list = orient['cell_coord_list']
+            
             if set(piece_cell_list).issubset(cell_coord_list):
                piece_grid = orient['grid']
                scores, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
@@ -196,7 +202,6 @@ class Solver:
       }
       
       
-    
     all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][-1], reverse=True)
     highest_scoring_piece = all_possible_pieces[0]
     
@@ -224,7 +229,7 @@ class Solver:
           edge_list[change_edge_idx] = '1'
           cell_to_change['edges'] = "".join(edge_list)
       
-    return window_index, changed_hole
+    return window_index, changed_hole, highest_scoring_piece
     
     
     # TODO: Rarer pieces get a 0.5 - 0.95 (< 1) edge point boost, 

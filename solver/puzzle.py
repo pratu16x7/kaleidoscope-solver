@@ -728,10 +728,8 @@ def get_rotated(piece, rotation, get_list=True):
 #   return get_best_hori_windows(patt) + get_best_hori_windows(get_rotated(patt, 90))
 
 
-MIN_WINDOW_CELLS = 4
+# MIN_WINDOW_CELLS = 4
 MIN_WINDOW_EDGES = 5
-
-
 
 # window recalc is cheaper
 # Also take into account the hole full cell count, 
@@ -742,6 +740,8 @@ MIN_WINDOW_EDGES = 5
 #   and for places there are weird areas
 #   yep, only for big holes, where you have 
 #   so many cells so you have to filter by edge density
+
+# TODO: Longer windows for small_wand
 
 def get_valid_windows(patt):
   h = len(patt)
@@ -802,15 +802,20 @@ def get_valid_windows(patt):
   # w - w_2x3_width + 1
   cell_sums_wide = []
   
+  cell_count_window_distribution = {}
+  
   for i in range(h - w_2x3_height + 1):
     grad_wide_sums = []
     # next_sum = None
     for j in range(w - w_2x3_width + 1):
       this_sum = hori_cell_2_grads[i][j] + hori_cell_2_grads[i][j+1] + hori_cell_2_grads[i][j+2]
-      if this_sum >= MIN_WINDOW_CELLS:
-        valid_windows.append([str(i) + str(j) + 'h', this_sum])
+      
+      window = str(i) + str(j) + 'h'
+      if this_sum not in cell_count_window_distribution:
+        cell_count_window_distribution[this_sum] = [window]
       else:
-        this_sum = 0
+        cell_count_window_distribution[this_sum].append(window)
+        
       grad_wide_sums.append(this_sum)
       
     cell_sums_wide.append(grad_wide_sums)
@@ -822,10 +827,13 @@ def get_valid_windows(patt):
     # next_sum = None
     for j in range(w - w_3x2_width + 1):
       this_sum = hori_cell_3_grads[i][j] + hori_cell_3_grads[i][j+1]
-      if this_sum >= MIN_WINDOW_CELLS:
-        valid_windows.append([str(i) + str(j) + 'v', this_sum])
+      
+      window = str(i) + str(j) + 'v'
+      if this_sum not in cell_count_window_distribution:
+        cell_count_window_distribution[this_sum] = [window]
       else:
-        this_sum = 0
+        cell_count_window_distribution[this_sum].append(window)
+      
       grad_long_sums.append(this_sum)
       
     cell_sums_long.append(grad_long_sums)
@@ -841,5 +849,22 @@ def get_valid_windows(patt):
   
   # return ['34h', '26v']
   
-  return valid_windows
+  windows = []
+  ccwd = cell_count_window_distribution
+  COUNT_CUTOFF = 1
+  
+  if ccwd:
+    if len(ccwd) == 1:
+      size = ccwd.keys()[0]
+      windows = [[window, size] for window in ccwd[size]]
+    else:
+      # more than two kinds of sizes (counts)
+      sizes = sorted(ccwd.keys(), reverse=True)
+      if len(ccwd[sizes[0]]) > COUNT_CUTOFF:
+        windows = [[window, sizes[0]] for window in ccwd[sizes[0]]]
+      else:
+        windows = ([[window, sizes[0]] for window in ccwd[sizes[0]]] +
+          [[window, sizes[1]] for window in ccwd[sizes[1]]])
+
+  return windows
 
