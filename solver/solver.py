@@ -69,6 +69,10 @@ class Solver:
     self.holes = get_holes_and_stats(board['grid'])
     
     
+    # # TODO: remo
+#     self.holes =
+    
+    
     # this is only per state
     self.moves = []
     
@@ -105,7 +109,6 @@ class Solver:
   # TODO: will be based on the game state 
   def get_next_move():
     pass
-    
     
   def solve_hole(self, hole):
     solution_progression = []

@@ -1,5 +1,13 @@
 # EVERYTHING that's not directly related to the algorithm
 
+# !!!!!!!!!!!!!!!
+# IMPORTANT !!!
+# ALL the learnings from matching pieces to grid windows should be consolidated and used for the next solve
+# all stored as indexs for lightning fast piece to window matching
+# it's a similar concept on which ML depends: 
+# training and getting a model that is used for subsequent solves
+
+
 from flask import Flask, render_template
 from solver import Solver
 from detector import get_pattern_img, get_black_thresh
