@@ -72,7 +72,7 @@ class Solver:
     # TODO: Order by size, 
     # [testing] keep increasing to eventual full array
     # TODO: Maintain a state of percent solved
-    self.holes = [self.holes['3hole'], self.holes['1hole']]
+    self.holes = [self.holes['2hole'], self.holes['3hole'], self.holes['1hole']]
     
     
     # this is only per state
@@ -94,6 +94,11 @@ class Solver:
     
     self.magic_wand_placed = False
     
+    # TODO: Trigger warnings, lower scores
+    self.domino_used = False
+    self.r_monomino_used = False
+    self.x_monomino_used = False
+    
     
     # this is per hole
     
@@ -113,6 +118,8 @@ class Solver:
     pass
     
   def solve(self):
+    # TODO: Keep track of hole solution score
+    
     for hole in self.holes:
       self.solve_hole(hole)
       
@@ -128,24 +135,35 @@ class Solver:
     
     # hole offset
     off_y, off_x = hole['offset']
+    
+    # TODO: Hole piece solve score
+    # track the cheat (small) peices used
+    hole_solution_score = 0
 
     while get_cell_count(current_hole):
       next_expected_count = piece_size_progression.pop(0)
       
-      winner, score_card, current_hole = self.get_best_hole_move(
+      sol = self.get_best_hole_move(
         current_hole, 
         self.available_pieces, 
         next_expected_count
       )
       
-      self.available_pieces.remove(winner['name'])
-      self.used_pieces.append(winner['name'])
+      if sol:
+        winner, score_card, current_hole = sol
       
-      # hole_rel_window_pos
-      p_y, p_x = winner['coord_pair']
-      pos = [off_y + p_y, off_x + p_x]
-      self.moves.append([winner, score_card, current_hole, pos])
+        self.available_pieces.remove(winner['name'])
+        self.used_pieces.append(winner['name'])
+      
+        # hole_rel_window_pos
+        p_y, p_x = winner['coord_pair']
+        pos = [off_y + p_y, off_x + p_x]
+        self.moves.append([winner, score_card, current_hole, pos])
+      else:
+        if next_expected_count == 3:
+          piece_size_progression += [2, 1]
 
+    return hole_solution_score
     
     
   def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):
@@ -245,9 +263,14 @@ class Solver:
     # TODO: remove
     print(windows)
       
+      
+    # TODO: More graceful failing, for handling in the caller
+    if not all_possible_pieces:
+      return
+      
+      
     all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][-1], reverse=True)
     
-    # TODO: Add a graceful error condition for no piece found
     highest_scoring_piece = all_possible_pieces[0]
     
     selected_window = window_index[highest_scoring_piece['window_id']]

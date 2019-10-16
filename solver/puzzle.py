@@ -142,8 +142,8 @@ def get_piece_to_window_edge_scores(piece, window):
               # TODO: needs custom rules for how a square 
               # (or a smaller piece than window) 
               # should be placed
-              coord_pair = block['rel_coord_pair']
-              piece_cell = piece[coord_pair[0]][coord_pair[1]]
+              y, x = block['rel_coord_pair']
+              piece_cell = piece[y][x] if y < len(piece) and x < len(piece[0]) else None
               if piece_cell:
                   open_edges = []
                   for idx, edge in enumerate(piece_cell['edges']):
