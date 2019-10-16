@@ -7,6 +7,11 @@
 # it's a similar concept on which ML depends: 
 # training and getting a model that is used for subsequent solves
 
+# Looks like this program will have 3 major parts:
+# 1. The learnings indexes, and the program to generate them
+# 2. The Solver program, all the heavylifting logic
+# 3. The presenter program, keeping track of the states and scores
+
 
 from flask import Flask, render_template
 from solver import Solver
@@ -30,19 +35,15 @@ def home():
   # do everything else via the solver
   
   solver = Solver(board)
-
-  
-  hole = solver.holes['1hole']
-  solution_progression = solver.solve_hole(hole)
+  solver.solve()
   
   return render_template('home.html', 
     data=solver.board, 
     holes=solver.holes, 
     piece_sets=solver.get_piece_sets(),
-    window_index=solution_progression[0][1],
+    window_index=solver.moves[0][1],
     
-    hole=hole['grid'],
-    solution_progression=solution_progression,
+    moves=solver.moves,
   )
   
 if __name__ == "__main__":

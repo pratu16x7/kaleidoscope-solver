@@ -779,9 +779,30 @@ MIN_WINDOW_EDGES = 5
 # TODO: Longer windows for small_wand
 # and incorporate next_expected_piece_count
 
+WINDOW_SIZES = {
+  'h': [2, 3], 
+  'v': [3, 2],
+  'lh': [1, 4],
+  'lv': [1, 4],
+  'sh': []
+}
+
 def get_valid_windows(patt, next_expected_piece_count):
   h = len(patt)
   w = len(patt[0])
+  
+  SMALL_WAND_WIN = False
+  
+  # horizontal windows
+  w_2x3_width = 3
+  w_2x3_height = 2
+  w_3x2_width = 2
+  w_3x2_height = 3
+  
+  
+  if h * w < 6 and not SMALL_WAND_WIN:
+    return [['00', [h, w], get_cell_count(patt)]]
+    
   
   valid_windows = []
   
@@ -803,12 +824,6 @@ def get_valid_windows(patt, next_expected_piece_count):
         
     cell_grid.append(cells)
     edge_count_grid.append(edge_counts)
-  
-  # horizontal windows
-  w_2x3_width = 3
-  w_2x3_height = 2
-  w_3x2_width = 2
-  w_3x2_height = 3
   
   hori_cell_2_grads = []
   hori_cell_3_grads = []
@@ -846,7 +861,7 @@ def get_valid_windows(patt, next_expected_piece_count):
     for j in range(w - w_2x3_width + 1):
       this_sum = hori_cell_2_grads[i][j] + hori_cell_2_grads[i][j+1] + hori_cell_2_grads[i][j+2]
       
-      window = str(i) + str(j) + 'h'
+      window = [str(i) + str(j), [2, 3], this_sum]
       if this_sum not in cell_count_window_distribution:
         cell_count_window_distribution[this_sum] = [window]
       else:
@@ -864,7 +879,7 @@ def get_valid_windows(patt, next_expected_piece_count):
     for j in range(w - w_3x2_width + 1):
       this_sum = hori_cell_3_grads[i][j] + hori_cell_3_grads[i][j+1]
       
-      window = str(i) + str(j) + 'v'
+      window = [str(i) + str(j), [3, 2], this_sum]
       if this_sum not in cell_count_window_distribution:
         cell_count_window_distribution[this_sum] = [window]
       else:
@@ -891,16 +906,14 @@ def get_valid_windows(patt, next_expected_piece_count):
   
   if ccwd:
     if len(ccwd) == 1:
-      size = ccwd.keys()[0]
-      windows = [[window, size] for window in ccwd[size]]
+      windows = ccwd.values()[0]
     else:
       # more than two kinds of sizes (counts)
       sizes = sorted(ccwd.keys(), reverse=True)
       if len(ccwd[sizes[0]]) > COUNT_CUTOFF:
-        windows = [[window, sizes[0]] for window in ccwd[sizes[0]]]
+        windows = ccwd[sizes[0]]
       else:
-        windows = ([[window, sizes[0]] for window in ccwd[sizes[0]]] +
-          [[window, sizes[1]] for window in ccwd[sizes[1]]])
+        windows = ccwd[sizes[0]] + ccwd[sizes[1]]
 
   return windows
 

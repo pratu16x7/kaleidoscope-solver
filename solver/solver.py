@@ -69,8 +69,10 @@ class Solver:
     self.holes = get_holes_and_stats(board['grid'])
     
     
-    # # TODO: remo
-#     self.holes =
+    # TODO: Order by size, 
+    # [testing] keep increasing to eventual full array
+    # TODO: Maintain a state of percent solved
+    self.holes = [self.holes['3hole'], self.holes['1hole']]
     
     
     # this is only per state
@@ -107,12 +109,15 @@ class Solver:
     
     
   # TODO: will be based on the game state 
-  def get_next_move():
+  def get_next_move(self):
     pass
     
+  def solve(self):
+    for hole in self.holes:
+      self.solve_hole(hole)
+      
+    
   def solve_hole(self, hole):
-    solution_progression = []
-
     current_hole = hole['grid']
 
     cell_count = get_cell_count(current_hole)
@@ -126,18 +131,21 @@ class Solver:
 
     while get_cell_count(current_hole):
       next_expected_count = piece_size_progression.pop(0)
-      winner, score_card, current_hole = self.get_best_hole_move(current_hole, self.available_pieces, next_expected_count)
+      
+      winner, score_card, current_hole = self.get_best_hole_move(
+        current_hole, 
+        self.available_pieces, 
+        next_expected_count
+      )
+      
       self.available_pieces.remove(winner['name'])
       self.used_pieces.append(winner['name'])
       
       # hole_rel_window_pos
       p_y, p_x = winner['coord_pair']
       pos = [off_y + p_y, off_x + p_x]
-      self.moves.append([winner, pos])
-      
-      solution_progression.append([winner, score_card, current_hole, pos])
-      
-    return solution_progression
+      self.moves.append([winner, score_card, current_hole, pos])
+
     
     
   def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):
@@ -155,10 +163,12 @@ class Solver:
     # TODO: Special case for the square tile, and all the smaller ones
     # wait, maybe they'll be taken care of anyway. Test and check.
     for win in windows:
-      window_id, no_of_cells = win
-      coord = window_id[:2]
+      coord, dim, no_of_cells = win
       y, x = int(coord[0]), int(coord[1])
-      h, w = (2, 3) if window_id[2] == 'h' else (3, 2)
+      # h, w = (2, 3) if window_id[2] == 'h' else (3, 2)
+      h, w = dim
+      
+      window_id = coord + str(dim[0]) + str(dim[1])
       
       window = []
       cell_coord_list = []
@@ -231,8 +241,13 @@ class Solver:
         'possible_pieces': possible_pieces
       }
       
+    
+    # TODO: remove
+    print(windows)
       
     all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][-1], reverse=True)
+    
+    # TODO: Add a graceful error condition for no piece found
     highest_scoring_piece = all_possible_pieces[0]
     
     selected_window = window_index[highest_scoring_piece['window_id']]

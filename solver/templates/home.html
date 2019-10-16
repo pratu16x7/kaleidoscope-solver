@@ -42,14 +42,12 @@
   </div>
   
   <h3>Holes, smallest first</h3>
-  {% for key, hole in holes.items() %}
+  {% for hole in holes %}
     {{ grid_pattern(hole.grid, 'piece') }}
   {% endfor %}
   <p>-------</p>
   
-  {{ grid_pattern(hole, 'piece') }}
-  
-  {% for move in solution_progression %}
+  {% for move in moves %}
     {{ move[3] }}
     {{ move[0] }}
     {{ grid_pattern(get_piece(move[0]['name'], move[0]['orient']).grid, 'piece') }}
