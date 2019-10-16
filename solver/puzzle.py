@@ -268,7 +268,7 @@ def get_pattern_and_stats(s):
     'size': len(cells),
     'type': cell_type,
     'colored_cells_cnt': colored_cells_cnt,
-    'min_coords': [min_y, min_x],
+    'offset': [min_y, min_x],
     # 'perimeter': perimeter,
     # 'deviation_index': deviation_index,
     # 'orientations': orientations
@@ -777,8 +777,9 @@ MIN_WINDOW_EDGES = 5
 #   so many cells so you have to filter by edge density
 
 # TODO: Longer windows for small_wand
+# and incorporate next_expected_piece_count
 
-def get_valid_windows(patt):
+def get_valid_windows(patt, next_expected_piece_count):
   h = len(patt)
   w = len(patt[0])
   

@@ -50,6 +50,7 @@
   {{ grid_pattern(hole, 'piece') }}
   
   {% for move in solution_progression %}
+    {{ move[3] }}
     {{ move[0] }}
     {{ grid_pattern(get_piece(move[0]['name'], move[0]['orient']).grid, 'piece') }}
     {{ grid_pattern(move[2], 'piece') }}

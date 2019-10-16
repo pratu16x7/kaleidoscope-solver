@@ -60,7 +60,6 @@ class Solver:
   def __init__(self, board):
     
     self.puzzle = Puzzle()
-    self.pieces = self.puzzle.get_pieces()
     
     
     self.board = board
@@ -81,7 +80,7 @@ class Solver:
     #   'possible_pieces': [], # with chars
     # }
     
-    self.available_pieces = []
+    self.available_pieces = list(self.puzzle.get_pieces())
     self.used_pieces = []
     
     self.remaining_holes = []
@@ -118,20 +117,31 @@ class Solver:
     
     # TODO: For testing on more cases, remove once done
     print(piece_size_progression)
+    
+    # hole offset
+    off_y, off_x = hole['offset']
 
     while get_cell_count(current_hole):
       next_expected_count = piece_size_progression.pop(0)
-      winner, score_card, current_hole = self.get_best_hole_move(current_hole, next_expected_count)
-      solution_progression.append([winner, score_card, current_hole])
+      winner, score_card, current_hole = self.get_best_hole_move(current_hole, self.available_pieces, next_expected_count)
+      self.available_pieces.remove(winner['name'])
+      self.used_pieces.append(winner['name'])
+      
+      # hole_rel_window_pos
+      p_y, p_x = winner['coord_pair']
+      pos = [off_y + p_y, off_x + p_x]
+      self.moves.append([winner, pos])
+      
+      solution_progression.append([winner, score_card, current_hole, pos])
       
     return solution_progression
     
     
-  def get_best_hole_move(self, hole, next_expected_count=4):
+  def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):
     
     # Keep updating hole state and call this window again
     
-    windows = get_valid_windows(hole) 
+    windows = get_valid_windows(hole, next_expected_count) 
     # Take note of the size of window and available pieces to get the possible window cell count combinations
     
     import copy
@@ -176,7 +186,7 @@ class Solver:
       
       # TODO: Looks like pieces should only be stores as nameandorient, and referenced as such
       # Not moved around in 
-      for name in self.pieces:
+      for name in available_pieces:
         
         info = self.puzzle.get_piece_info(name)
         # next_expected_count for 4-5-6 size windows is always 4 
