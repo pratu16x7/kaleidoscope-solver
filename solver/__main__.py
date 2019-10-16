@@ -41,7 +41,7 @@ def home():
     data=solver.board, 
     holes=solver.holes, 
     piece_sets=solver.get_piece_sets(),
-    window_index=solver.moves[0][1],
+    window_index=solver.moves[-1][1],
     
     moves=solver.moves,
   )

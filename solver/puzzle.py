@@ -1,4 +1,5 @@
 from data import PIECES
+import copy
 
 # Also the utils to calc state given an input board/state
 
@@ -96,6 +97,31 @@ def get_pieces():
     pieces_reg[name] = piece
     orients_reg[name] = orients
   return pieces_reg, orients_reg
+  
+  
+def fill_piece(hole, piece, window_coord_pair, open_edges=[]):
+    # TODO:
+    if not open_edges:
+      pass
+    changed_hole = copy.deepcopy(hole)
+    wy, wx = window_coord_pair
+    for coord_t in piece['cell_coord_list']:
+      cy, cx = int(coord_t[0]), int(coord_t[1])
+      y, x = wy + cy, wx + cx
+      changed_hole[y][x] = None
+      
+      coord = coord_t[:2]
+      if coord in open_edges:
+        for edge_idx in open_edges[coord]:
+          dy, dx = DIR_OPS[edge_idx]
+          cell_to_change = changed_hole[y + dy][x + dx]
+          
+          change_edge_idx = DIR_REVS[edge_idx]
+          edge_list = list(cell_to_change['edges'])
+          edge_list[change_edge_idx] = '1'
+          cell_to_change['edges'] = "".join(edge_list)
+          
+    return changed_hole
 
 
 def get_piece_size_progression(cell_count):
@@ -266,6 +292,7 @@ def get_pattern_and_stats(s):
     'cell_coord_list': cell_coord_list,
     
     'size': len(cells),
+    'dim': [grid_h, grid_w],
     'type': cell_type,
     'colored_cells_cnt': colored_cells_cnt,
     'offset': [min_y, min_x],
@@ -725,7 +752,6 @@ def get_rotated(piece, rotation, get_list=True):
         second_range = range(l - 1, -1, -1)
         get_edges = lambda x: x[2:] + x[:2]
     
-    import copy
     rotated_grid = []
     cell_coord_list = []
     

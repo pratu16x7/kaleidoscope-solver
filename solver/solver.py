@@ -17,8 +17,7 @@ from puzzle import (
   get_valid_windows, 
   get_piece_to_window_edge_scores, 
   get_cell_count, 
-  DIR_OPS, 
-  DIR_REVS
+  fill_piece,
 )
 
 
@@ -120,6 +119,35 @@ class Solver:
   def solve(self):
     # TODO: Keep track of hole solution score
     
+    magic_wand_hole = None
+    
+    for hole in self.holes:
+      # if size big, select for magic wand
+      if hole['dim'][0] == 8 or hole['dim'][1] == 8:
+         magic_wand_hole = hole
+         
+    # find valid magic wand positions
+    # valid_positions = []
+    grid = hole['grid']
+    valid_position_windows = {}
+    for row in grid:
+      if None not in row:
+        pos_cell = row[0]
+        # valid_positions.append([pos_cell['coord'], 'h', pos_cell['color']])
+     
+    for idx in range(len(grid[0])):
+      col = [row[idx] for row in grid]
+      if None not in col:
+        pos_cell = col[0]
+        # valid_positions.append([pos_cell['coord'], 'v', pos_cell['color']])
+    
+    
+    # select the best position (non-hole-breaking/most edges count for position, leaving hole least crooked)
+     
+    
+    # place the magic wand and get new hole
+    
+    
     for hole in self.holes:
       self.solve_hole(hole)
       
@@ -160,6 +188,7 @@ class Solver:
         pos = [off_y + p_y, off_x + p_x]
         self.moves.append([winner, score_card, current_hole, pos])
       else:
+        # TODO: more cases
         if next_expected_count == 3:
           piece_size_progression += [2, 1]
 
@@ -260,8 +289,8 @@ class Solver:
       }
       
     
-    # TODO: remove
-    print(windows)
+    # # remove
+    # print(windows)
       
       
     # TODO: More graceful failing, for handling in the caller
@@ -271,31 +300,14 @@ class Solver:
       
     all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][-1], reverse=True)
     
+    # TODO: IMP, Also check if piece breaks the hole
+    # In case of a tie, can check which one makes hole less edge-ful (smoother hole is left in ideal situation)
     highest_scoring_piece = all_possible_pieces[0]
     
     selected_window = window_index[highest_scoring_piece['window_id']]
     
-    
-    changed_hole = copy.deepcopy(hole)
-    wy, wx = selected_window['coord_pair']
-    open_edges = highest_scoring_piece['open_edges']
-    
-    
-    for coord_t in highest_scoring_piece['cell_coord_list']:
-      cy, cx = int(coord_t[0]), int(coord_t[1])
-      y, x = wy + cy, wx + cx
-      changed_hole[y][x] = None
-      
-      coord = coord_t[:2]
-      if coord in open_edges:
-        for edge_idx in open_edges[coord]:
-          dy, dx = DIR_OPS[edge_idx]
-          cell_to_change = changed_hole[y + dy][x + dx]
-          
-          change_edge_idx = DIR_REVS[edge_idx]
-          edge_list = list(cell_to_change['edges'])
-          edge_list[change_edge_idx] = '1'
-          cell_to_change['edges'] = "".join(edge_list)
+    open_edges = highest_scoring_piece['open_edges']    
+    changed_hole = fill_piece(hole, highest_scoring_piece, selected_window['coord_pair'], open_edges)
       
     return highest_scoring_piece, window_index, changed_hole
     
