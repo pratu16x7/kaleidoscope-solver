@@ -71,7 +71,7 @@ class Solver:
     # TODO: Order by size, 
     # [testing] keep increasing to eventual full array
     # TODO: Maintain a state of percent solved
-    self.holes = [self.holes['2hole'], self.holes['3hole'], self.holes['1hole']]
+    self.holes = [self.holes['2hole'], self.holes['3hole'], self.holes['1hole'], self.holes['0hole']]
     
     
     # this is only per state
@@ -92,6 +92,8 @@ class Solver:
     self.solved_holes = []
     
     self.magic_wand_placed = False
+    
+    self.small_wand_placed = False
     
     # TODO: Trigger warnings, lower scores
     self.domino_used = False
@@ -124,31 +126,61 @@ class Solver:
     for hole in self.holes:
       # if size big, select for magic wand
       if hole['dim'][0] == 8 or hole['dim'][1] == 8:
+         # TODO: Multiple holes might have magic wand positions
          magic_wand_hole = hole
          
     # find valid magic wand positions
     # valid_positions = []
-    grid = hole['grid']
+    grid = magic_wand_hole['grid']
     valid_position_windows = {}
+    
+    max_edge_score = 0
+    selected_pos = None
     for row in grid:
       if None not in row:
         pos_cell = row[0]
-        # valid_positions.append([pos_cell['coord'], 'h', pos_cell['color']])
+        s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'h'
+        pos = [pos_cell['coord_pair'], 'h', pos_cell['color'], row]
+        
+        edge_score = sum([cell['edges'].count('1') for cell in row])
+        if edge_score > max_edge_score:
+          max_edge_score = edge_score
+          selected_pos = pos
+          
+        valid_position_windows[s] = pos
      
     for idx in range(len(grid[0])):
       col = [row[idx] for row in grid]
       if None not in col:
         pos_cell = col[0]
-        # valid_positions.append([pos_cell['coord'], 'v', pos_cell['color']])
+        s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'v'
+        pos = [pos_cell['coord_pair'], 'v', pos_cell['color'], col]
+        
+        # print(col)
+        edge_score = sum([cell['edges'].count('1') for cell in col])
+        if edge_score > max_edge_score:
+          max_edge_score = edge_score
+          selected_pos = pos
+          
+        valid_position_windows[s] = pos
+            
     
     
     # select the best position (non-hole-breaking/most edges count for position, leaving hole least crooked)
+    print(selected_pos[0])
+      
      
     
     # place the magic wand and get new hole
+    # TODO: [simple] [codezit-in] should know which orientation is need by the selected position
+    piece = self.puzzle.get_piece('magic_wand', 0)
+    changed_hole = fill_piece(grid, piece, selected_pos[0])
+    
+    magic_wand_hole['grid'] = changed_hole
     
     
-    for hole in self.holes:
+    # TODO: correct
+    for hole in self.holes[:-1]:
       self.solve_hole(hole)
       
     
@@ -199,7 +231,8 @@ class Solver:
     
     # Keep updating hole state and call this window again
     
-    windows = get_valid_windows(hole, next_expected_count) 
+    small_wand_too = 'small_wand' in available_pieces
+    windows = get_valid_windows(hole, next_expected_count, small_wand_too) 
     # Take note of the size of window and available pieces to get the possible window cell count combinations
     
     import copy

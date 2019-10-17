@@ -813,7 +813,7 @@ WINDOW_SIZES = {
   'sh': []
 }
 
-def get_valid_windows(patt, next_expected_piece_count):
+def get_valid_windows(patt, next_expected_piece_count, small_wand_too):
   h = len(patt)
   w = len(patt[0])
   
