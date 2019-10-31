@@ -172,9 +172,9 @@ class Solver:
      
     
     # place the magic wand and get new hole
-    # TODO: [simple] [codezit-in] should know which orientation is need by the selected position
+    # TODO: [simple] [code-it-in] should know which orientation is needed by the selected position
     piece = self.puzzle.get_piece('magic_wand', 0)
-    changed_hole = fill_piece(grid, piece, selected_pos[0])
+    changed_hole = fill_piece(grid, piece, selected_pos[0], {}, True)
     
     magic_wand_hole['grid'] = changed_hole
     
@@ -339,7 +339,7 @@ class Solver:
     
     selected_window = window_index[highest_scoring_piece['window_id']]
     
-    open_edges = highest_scoring_piece['open_edges']    
+    open_edges = highest_scoring_piece['open_edges']
     changed_hole = fill_piece(hole, highest_scoring_piece, selected_window['coord_pair'], open_edges)
       
     return highest_scoring_piece, window_index, changed_hole

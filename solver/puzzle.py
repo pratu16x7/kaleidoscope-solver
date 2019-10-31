@@ -99,27 +99,35 @@ def get_pieces():
   return pieces_reg, orients_reg
   
   
-def fill_piece(hole, piece, window_coord_pair, open_edges=[]):
-    # TODO:
-    if not open_edges:
-      pass
+def fill_piece(hole, piece, window_coord_pair, open_edges={}, calc_edges=False):
     changed_hole = copy.deepcopy(hole)
     wy, wx = window_coord_pair
     for coord_t in piece['cell_coord_list']:
       cy, cx = int(coord_t[0]), int(coord_t[1])
       y, x = wy + cy, wx + cx
-      changed_hole[y][x] = None
       
+      filled_cell = changed_hole[y][x]
+      changed_hole[y][x] = None
       coord = coord_t[:2]
-      if coord in open_edges:
-        for edge_idx in open_edges[coord]:
-          dy, dx = DIR_OPS[edge_idx]
-          cell_to_change = changed_hole[y + dy][x + dx]
+      
+      if calc_edges:
+          piece_cell = piece['grid'][cy][cx]
           
-          change_edge_idx = DIR_REVS[edge_idx]
-          edge_list = list(cell_to_change['edges'])
-          edge_list[change_edge_idx] = '1'
-          cell_to_change['edges'] = "".join(edge_list)
+          coord_open_edges = []
+          for idx, edge in enumerate(filled_cell['edges']):
+              if piece_cell['edges'][idx] != edge:
+                coord_open_edges.append(idx) 
+      else:
+          coord_open_edges = open_edges.get(coord, [])
+
+      for edge_idx in coord_open_edges:
+        dy, dx = DIR_OPS[edge_idx]
+        cell_to_change = changed_hole[y + dy][x + dx]
+        
+        change_edge_idx = DIR_REVS[edge_idx]
+        edge_list = list(cell_to_change['edges'])
+        edge_list[change_edge_idx] = '1'
+        cell_to_change['edges'] = "".join(edge_list)
           
     return changed_hole
 
