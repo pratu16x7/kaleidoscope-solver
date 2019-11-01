@@ -155,26 +155,30 @@ class Solver:
         pos_cell = col[0]
         s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'v'
         pos = [pos_cell['coord_pair'], 'v', pos_cell['color'], col]
-        
-        # print(col)
+
         edge_score = sum([cell['edges'].count('1') for cell in col])
         if edge_score > max_edge_score:
           max_edge_score = edge_score
           selected_pos = pos
           
         valid_position_windows[s] = pos
-            
-    
-    
+       
     # select the best position (non-hole-breaking/most edges count for position, leaving hole least crooked)
-    print(selected_pos[0])
-      
-     
+    # selected_pos = list(valid_position_windows.values())[3]
+    position = selected_pos[0]
+
+    # select orientation needed by the selected position
+    orient_map = {
+      'hr': 0,
+      'vr': 1,
+      'hx': 2,
+      'vx': 3
+    }
+    orient = orient_map[selected_pos[1] + selected_pos[2]]
     
     # place the magic wand and get new hole
-    # TODO: [simple] [code-it-in] should know which orientation is needed by the selected position
-    piece = self.puzzle.get_piece('magic_wand', 0)
-    changed_hole = fill_piece(grid, piece, selected_pos[0], {}, True)
+    piece = self.puzzle.get_piece('magic_wand', orient)
+    changed_hole = fill_piece(grid, piece, position, {}, True)
     
     magic_wand_hole['grid'] = changed_hole
     
