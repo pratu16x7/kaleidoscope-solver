@@ -9,7 +9,7 @@
 # Global state (The decision tree level, all knowing, global state)
 
 
-
+import copy
 from puzzle import (
   get_pieces, 
   get_piece_size_progression, 
@@ -52,14 +52,13 @@ class Puzzle:
     if not names:
       names = self.get_pieces()
     return [self.get_orients(name) for name in names]
-    
-    
+
+
+puzzle = Puzzle()
+
 
 class Solver:
   def __init__(self, board):
-    
-    self.puzzle = Puzzle()
-    
     
     self.board = board
     
@@ -85,7 +84,7 @@ class Solver:
     #   'possible_pieces': [], # with chars
     # }
     
-    self.available_pieces = list(self.puzzle.get_pieces())
+    self.available_pieces = list(puzzle.get_pieces())
     self.used_pieces = []
     
     self.remaining_holes = []
@@ -111,7 +110,7 @@ class Solver:
   
 
   def get_piece_sets(self, names=[]):
-    return self.puzzle.get_piece_sets(names)
+    return puzzle.get_piece_sets(names)
     
     
   # TODO: will be based on the game state 
@@ -177,7 +176,7 @@ class Solver:
     orient = orient_map[selected_pos[1] + selected_pos[2]]
     
     # place the magic wand and get new hole
-    piece = self.puzzle.get_piece('magic_wand', orient)
+    piece = puzzle.get_piece('magic_wand', orient)
     changed_hole = fill_piece(grid, piece, position, {}, True)
     
     magic_wand_hole['grid'] = changed_hole
@@ -232,87 +231,25 @@ class Solver:
     
     
   def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):
-    
     # Keep updating hole state and call this window again
+    window_index = {}
+    all_possible_pieces = []
     
     small_wand_too = 'small_wand' in available_pieces
     windows = get_valid_windows(hole, next_expected_count, small_wand_too) 
     # Take note of the size of window and available pieces to get the possible window cell count combinations
     
-    import copy
-    
-    window_index = {}
-    all_possible_pieces = []
-    
-    # TODO: Special case for the square tile, and all the smaller ones
-    # wait, maybe they'll be taken care of anyway. Test and check.
     for win in windows:
       coord, dim, no_of_cells = win
       y, x = int(coord[0]), int(coord[1])
-      # h, w = (2, 3) if window_id[2] == 'h' else (3, 2)
       h, w = dim
       
       window_id = coord + str(dim[0]) + str(dim[1])
+      window, cell_coord_list = get_window_and_cell_coord_list(hole, y, x, h, w)  
+      possible_pieces = get_possible_pieces(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
       
-      window = []
-      cell_coord_list = []
-      for i in range(y, y + h):
-        window_row = []
-        for j in range(x, x + w):
-          cell = copy.copy(hole[i][j])
-          if cell:
-            if 'rel_coord_pair' in cell:
-              cy, cx = cell['rel_coord_pair']
-            else:
-              cy, cx = cell['coord_pair']
-            cy_, cx_ = cy - y, cx - x 
-            cell['rel_coord_pair'] = [cy_, cx_]
-            cell['rel_coord'] = str(cy_) + str(cx_)
-            
-            cell_coord_list.append(cell['rel_coord'] + cell['color'])
-          
-          window_row.append(cell) 
-
-        window.append(window_row)
-        
-        
-      # Piece shortlisting
-      possible_pieces = []
+      all_possible_pieces += possible_pieces
       
-      # # TODO: if desired 3 not there, 3 = 2 + 1 
-      
-      # TODO: Looks like pieces should only be stores as nameandorient, and referenced as such
-      # Not moved around in 
-      for name in available_pieces:
-        
-        info = self.puzzle.get_piece_info(name)
-        # next_expected_count for 4-5-6 size windows is always 4 
-        if no_of_cells >= 4:
-           next_expected_count = 4
-        if info['size'] <= no_of_cells and info['size'] >= next_expected_count:
-          
-          orients = self.puzzle.get_orients(name)
-          for idx, orient in enumerate(orients):
-            piece_cell_list = orient['cell_coord_list']
-            
-            if set(piece_cell_list).issubset(cell_coord_list):
-               piece_grid = orient['grid']
-               scores, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
-               piece_data = {
-                 'name': name,
-                 'orient': idx,
-                 'cell_coord_list': piece_cell_list,
-                 'scores': scores,
-                 'window_id': window_id,
-                 'coord_pair': [y, x],
-                 'open_edges': open_edges,
-               }
-               possible_pieces.append(piece_data)
-               all_possible_pieces.append(piece_data)
-               
-               # store open edges and keep: wherever piece had an edge and window had open edge
-
-
       window_index[window_id] = {
         'coord': coord,
         'coord_pair': [y, x],
@@ -324,16 +261,11 @@ class Solver:
         
         'possible_pieces': possible_pieces
       }
-      
-    
-    # # remove
-    # print(windows)
-      
-      
+        
     # TODO: More graceful failing, for handling in the caller
+    # print(windows)
     if not all_possible_pieces:
       return
-      
       
     all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][-1], reverse=True)
     
@@ -347,31 +279,89 @@ class Solver:
     changed_hole = fill_piece(hole, highest_scoring_piece, selected_window['coord_pair'], open_edges)
       
     return highest_scoring_piece, window_index, changed_hole
+
+
+   
+def get_window_and_cell_coord_list(hole, y, x, h, w):
+  window = []
+  cell_coord_list = []
+  for i in range(y, y + h):
+    window_row = []
+    for j in range(x, x + w):
+      cell = copy.copy(hole[i][j])
+      if cell:
+        if 'rel_coord_pair' in cell:
+          cy, cx = cell['rel_coord_pair']
+        else:
+          cy, cx = cell['coord_pair']
+        cy_, cx_ = cy - y, cx - x 
+        cell['rel_coord_pair'] = [cy_, cx_]
+        cell['rel_coord'] = str(cy_) + str(cx_)
+      
+        cell_coord_list.append(cell['rel_coord'] + cell['color'])
     
+      window_row.append(cell) 
+
+    window.append(window_row)
     
-    # TODO: Rarer pieces get a 0.5 - 0.95 (< 1) edge point boost, 
-    # so that if a rare and a simple have two edges open
-    # The rarer one triumphs with a half point
-    # But if it's a whole edge difference, the simple one is clear winner
-    # In other words, Rarity is a Tie-Breaker, not a one edge extra up
-    # Probably only for very high scores though
-    # for lower scores (like a rare with 4 edges open) might be better to simply
-    # favour the rare one blindly
+  return window, cell_coord_list 
     
-    
-    # TODO: also a window for the small wand has to be scanned every move
-    
-    # don't recalc windows after a move, recycle prev windows only
-    # i.e remove those windows
-    
-    # oh, you'll have to change the edges now
-    # No worries, windows are just limits, implement a function to get the hole view with it
-    # That's what they're supposed to be
-    
-    # Meanwhile after a move, every edge that the piece was and the window wasn't 
-    
-    # BUT
-    # windows are just windows but they need to be able to see the rel_coords, to compare with pieces
-    # Non persistence you have to check again and again 
-    
-    
+def get_possible_pieces(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, coord_pair):
+  # TODO: if desired 3 not there, 3 = 2 + 1 
+  possible_pieces = []
+  for name in available_pieces:
+    info = puzzle.get_piece_info(name)
+    # next_expected_count for 4-5-6 size windows is always 4 
+    if no_of_cells >= 4:
+       next_expected_count = 4
+    if info['size'] <= no_of_cells and info['size'] >= next_expected_count:
+      
+      orients = puzzle.get_orients(name)
+      for idx, orient in enumerate(orients):
+        piece_cell_list = orient['cell_coord_list']
+        
+        if set(piece_cell_list).issubset(cell_coord_list):
+           piece_grid = orient['grid']
+           scores, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
+           piece_data = {
+             'name': name,
+             'orient': idx,
+             'cell_coord_list': piece_cell_list,
+             'scores': scores,
+             'window_id': window_id,
+             'coord_pair': coord_pair,
+             'open_edges': open_edges,
+           }
+           possible_pieces.append(piece_data)
+           
+           # store open edges and keep: wherever piece had an edge and window had open edge
+           
+  return possible_pieces
+
+# TODO: Rarer pieces get a 0.5 - 0.95 (< 1) edge point boost, 
+# so that if a rare and a simple have two edges open
+# The rarer one triumphs with a half point
+# But if it's a whole edge difference, the simple one is clear winner
+# In other words, Rarity is a Tie-Breaker, not a one edge extra up
+# Probably only for very high scores though
+# for lower scores (like a rare with 4 edges open) might be better to simply
+# favour the rare one blindly
+
+
+# TODO: also a window for the small wand has to be scanned every move
+
+# don't recalc windows after a move, recycle prev windows only
+# i.e remove those windows
+
+# oh, you'll have to change the edges now
+# No worries, windows are just limits, implement a function to get the hole view with it
+# That's what they're supposed to be
+
+# Meanwhile after a move, every edge that the piece was and the window wasn't 
+
+# BUT
+# windows are just windows but they need to be able to see the rel_coords, to compare with pieces
+# Non persistence you have to check again and again 
+   
+   
+   

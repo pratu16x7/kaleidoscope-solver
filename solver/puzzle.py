@@ -829,6 +829,8 @@ def get_valid_windows(patt, next_expected_piece_count, small_wand_too):
   
   SMALL_WAND_WIN = False
   
+  # Special case for the square tile, and all the smaller ones?
+  # Wait naa, maybe they'll be taken care of anyway. Test and check.
   if h * w < 6 and not SMALL_WAND_WIN:
     return [['00', [h, w], get_cell_count(patt)]]
   
