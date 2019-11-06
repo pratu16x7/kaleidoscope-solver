@@ -821,6 +821,75 @@ WINDOW_DIMS = {
   'sh': []
 }
 
+def get_long_windows(patt):
+  # edge scores first for 4 line
+  # but first existence cells, for hori and vert
+  
+  h = len(patt)
+  w = len(patt[0])
+  
+  hori_windows = []
+  for row in patt:
+    longest_cts_length = 0
+    longest_cts_length_coord = None
+    for cell in row:
+      if not cell:
+        if longest_cts_length >= 4:
+          break
+        else:
+          longest_cts_length = 0
+          longest_cts_length_coord = None
+      else:
+        if not longest_cts_length_coord:
+          longest_cts_length_coord = cell['rel_coord_pair']
+        longest_cts_length += 1
+        
+    if longest_cts_length >= 4:
+      wins = []
+      for i in range(longest_cts_length - 4 + 1):
+        coord_pair = longest_cts_length_coord
+        wins.append({
+          'coord': [coord_pair[0], coord_pair[1] + i],
+          'color': patt[coord_pair[0]][coord_pair[1] + i]['color']
+          # 'type': 'hori'
+        })
+      
+      # only take touching windows
+      hori_windows = [wins[0], wins[-1]] if len(wins) > 1 else wins
+        
+  vert_windows = []
+  for x in range(w):
+    longest_cts_length = 0
+    longest_cts_length_coord = None
+    for y in range(h):
+      cell = patt[y][x]
+      if not cell:
+        if longest_cts_length >= 4:
+          break
+        else:
+          longest_cts_length = 0
+          longest_cts_length_coord = None
+      else:
+        if not longest_cts_length_coord:
+          longest_cts_length_coord = cell['rel_coord_pair']
+        longest_cts_length += 1
+        print('vert', cell['rel_coord_pair'], longest_cts_length)
+        
+    if longest_cts_length >= 4:
+      wins = []
+      for i in range(longest_cts_length - 4 + 1):
+        coord_pair = longest_cts_length_coord
+        wins.append({
+          'coord': [coord_pair[0] + i, coord_pair[1]],
+          'color': patt[coord_pair[0] + i][coord_pair[1]]['color']
+          # 'type': 'vert'
+        })
+        
+      # only take touching windows
+      vert_windows = [wins[0], wins[-1]] if len(wins) > 1 else wins
+        
+  return hori_windows, vert_windows
+
 def get_valid_windows(patt, next_expected_piece_count, small_wand_too):
   valid_windows = []
   

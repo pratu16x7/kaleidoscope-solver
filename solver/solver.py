@@ -15,6 +15,7 @@ from puzzle import (
   get_piece_size_progression, 
   get_holes_and_stats, 
   get_valid_windows, 
+  get_long_windows,
   get_piece_to_window_edge_scores, 
   get_cell_count, 
   fill_piece,
@@ -246,7 +247,7 @@ class Solver:
       
       window_id = coord + str(dim[0]) + str(dim[1])
       window, cell_coord_list = get_window_and_cell_coord_list(hole, y, x, h, w)  
-      possible_pieces = get_possible_pieces(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
+      possible_pieces = get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
       
       all_possible_pieces += possible_pieces
       
@@ -261,6 +262,27 @@ class Solver:
         
         'possible_pieces': possible_pieces
       }
+      
+    if small_wand_too:
+      hori_windows, vert_windows = get_long_windows(hole)
+      print('hori_windows', hori_windows)
+      print('------')
+      print('vert_windows', vert_windows)
+      
+    # TODO: SAVE ALL THE SELECTED BEST CHOICES AT EVERY DECISION STEP
+      
+      # for win in long_wins:
+#         window_index[window_id] = {
+#           'coord': coord,
+#           'coord_pair': [y, x],
+#           'type': window_id[2],  # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
+#
+#           'grid': window,
+#           'no_of_cells': no_of_cells,
+#           'cell_coord_list': cell_coord_list,
+#
+#           'possible_pieces': possible_pieces
+#         }
         
     # TODO: More graceful failing, for handling in the caller
     # print(windows)
@@ -306,7 +328,7 @@ def get_window_and_cell_coord_list(hole, y, x, h, w):
     
   return window, cell_coord_list 
     
-def get_possible_pieces(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, coord_pair):
+def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, coord_pair):
   # TODO: if desired 3 not there, 3 = 2 + 1 
   possible_pieces = []
   for name in available_pieces:
