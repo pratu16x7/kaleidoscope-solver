@@ -13,8 +13,8 @@
 # 3. The presenter program, keeping track of the states and scores
 
 
-from flask import Flask, render_template
-from solver import Solver
+from flask import Flask, render_template, get_template_attribute
+from solver import Puzzle, Solver
 from detector import get_pattern_img, get_black_thresh
 from puzzle import get_board_from_img
 
@@ -22,29 +22,30 @@ from puzzle import get_board_from_img
 app = Flask(__name__)
 
 
-from solver import Puzzle
 puzzle = Puzzle()
 app.jinja_env.globals.update(get_piece=puzzle.get_piece)
 
+pattern_img = get_pattern_img()
+# TODO: get only the string of the board from img,
+# do everything else via the solver
+board = get_board_from_img(pattern_img, get_black_thresh())
+solver = Solver(board)
+
 @app.route('/')
 def home():
-  pattern_img = get_pattern_img()
-  board = get_board_from_img(pattern_img, get_black_thresh())
-  
-  # TODO: get only the string of the board from img,
-  # do everything else via the solver
-  
-  solver = Solver(board)
-  solver.solve()
-  
   return render_template('home.html', 
     data=solver.board, 
-    holes=solver.holes, 
-    piece_sets=solver.get_piece_sets(),
-    window_index=solver.moves[-1][1],
-    
-    moves=solver.moves,
+    holes=solver.all_holes, 
+    piece_sets=solver.get_piece_sets()
   )
+
+@app.route('/get_next_move')
+def get_next_move():
+  move_macro = get_template_attribute('components.html', 'move')
+  move = move_macro(*solver.get_next_move()) 
+  return {
+    'message': move
+  }
   
 if __name__ == "__main__":
     app.run(debug=True)

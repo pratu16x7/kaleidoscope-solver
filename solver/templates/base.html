@@ -9,6 +9,17 @@
 
     {% block content %}
     {% endblock %}
-
+    
+  <script>
+    document.getElementById('make-move').addEventListener('click', () => {
+      fetch('/get_next_move').then(response => {
+        return response.json()
+      }).then(move => {
+        const d = document.createElement('div')
+        d.innerHTML = move.message
+        document.getElementById('moves').append(d)
+      })
+    })
+  </script>
   </body>
 </html>

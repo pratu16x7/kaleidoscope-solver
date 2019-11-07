@@ -71,8 +71,15 @@ class Solver:
     # TODO: Order by size, 
     # [testing] keep increasing to eventual full array
     # TODO: Maintain a state of percent solved
-    self.holes = [self.holes['2hole'], self.holes['3hole'], self.holes['1hole'], self.holes['0hole']]
+    self.all_holes = [self.holes['2hole'], self.holes['3hole'], self.holes['1hole'], self.holes['0hole']]
     
+    for hole in self.all_holes:
+      hole['size'] = get_cell_count(hole['grid'])
+      
+    self.all_holes = sorted(self.all_holes, key=lambda x: x['size'])
+    
+    self.holes = self.all_holes[:-1]
+    self.progressions = [get_piece_size_progression(hole['size']) for hole in self.holes]
     
     # this is only per state
     self.moves = []
@@ -88,8 +95,14 @@ class Solver:
     self.available_pieces = list(puzzle.get_pieces())
     self.used_pieces = []
     
-    self.remaining_holes = []
     self.solved_holes = []
+    
+    self.current_hole = self.holes.pop(0)
+    self.current_hole_index = 0
+    self.current_offset = self.current_hole['offset']
+    self.current_hole_grid = copy.copy(self.current_hole['grid'])
+    
+    self.current_progression = self.progressions.pop(0)
     
     self.magic_wand_placed = False
     
@@ -106,28 +119,101 @@ class Solver:
     # go though the holes to see if area <= 4, Those are already solved
     # go through the holes to see which ones can house magic wand
     # Now solve smallest hole first
-    # just display the possible pieces on every step
-    
+    # just display the possible pieces on every stez
   
 
   def get_piece_sets(self, names=[]):
     return puzzle.get_piece_sets(names)
     
     
-  # TODO: will be based on the game state 
+  # TODO: will be based on the game state
+  # will initially not support backtracking 
   def get_next_move(self):
-    pass
+    move = {}
+    # will have coord, piece, score ... rel_coord, hole_id, type, subtype, other_moves
     
-  def solve(self):
     # TODO: Keep track of hole solution score
+    if not self.magic_wand_placed:
+      move = self.place_magic_wand()
+      if move:
+        self.magic_wand_placed = True
+        return move 
+      
+    # if not self.small_wand_placed:
+    #   move =
+    # else:
+    #   pass
     
+    move = self.get_move()
+    
+    return move
+    
+  # You mostly can't have a pure 'solve_hole' functionality
+  # because this game is better solved by considering global contexts
+  # You can only ever have a 'get_next_move' base on current circumstances 
+  def get_move(self):
+    # TODO: For testing on more cases, remove once done
+    print(self.current_progression)
+    
+    # hole offset
+    off_y, off_x = self.current_offset
+    
+    # TODO: Hole piece solve score
+    # track the cheat (small) peices used
+    hole_solution_score = 0
+
+    next_expected_count = self.current_progression.pop(0)
+    
+    hole_grid = self.current_hole_grid
+    
+    sol = self.get_best_hole_move(
+      hole_grid, 
+      self.available_pieces, 
+      next_expected_count
+    )
+    
+    if sol:
+      winner, score_card, hole_grid = sol
+    
+      self.available_pieces.remove(winner['name'])
+      self.used_pieces.append(winner['name'])
+    
+      # hole_rel_window_pos
+      p_y, p_x = winner['coord_pair']
+      pos = [off_y + p_y, off_x + p_x]
+      # move = [winner, score_card, hole_grid, pos, hole_solution_score]
+      move = [winner, 'orient', pos, self.current_hole_index]
+      self.moves.append(move)
+      
+    # TODO: more cases
+    elif next_expected_count == 3:
+      self.current_progression = [2, 1] + self.current_progression
+    else:
+      move = None
+      
+    if not get_cell_count(hole_grid):
+        if self.holes:
+          self.current_hole = self.holes.pop(0)
+          self.current_hole_index += 1
+          self.current_offset = self.current_hole['offset']
+          self.current_hole_grid = copy.copy(self.current_hole['grid'])
+          
+          self.current_progression = self.progressions.pop(0)
+        else:
+          print('SOLVED!!!')
+    
+    return move
+      
+  def place_magic_wand(self):
     magic_wand_hole = None
+    magic_wand_hole_index = None
     
-    for hole in self.holes:
+    for idx, hole in enumerate(self.all_holes):
       # if size big, select for magic wand
       if hole['dim'][0] == 8 or hole['dim'][1] == 8:
          # TODO: Multiple holes might have magic wand positions
          magic_wand_hole = hole
+         magic_wand_hole_index = idx
          
     # find valid magic wand positions
     # valid_positions = []
@@ -182,53 +268,7 @@ class Solver:
     
     magic_wand_hole['grid'] = changed_hole
     
-    
-    # TODO: correct
-    for hole in self.holes[:-1]:
-      self.solve_hole(hole)
-      
-    
-  def solve_hole(self, hole):
-    current_hole = hole['grid']
-
-    cell_count = get_cell_count(current_hole)
-    piece_size_progression = get_piece_size_progression(cell_count)
-    
-    # TODO: For testing on more cases, remove once done
-    print(piece_size_progression)
-    
-    # hole offset
-    off_y, off_x = hole['offset']
-    
-    # TODO: Hole piece solve score
-    # track the cheat (small) peices used
-    hole_solution_score = 0
-
-    while get_cell_count(current_hole):
-      next_expected_count = piece_size_progression.pop(0)
-      
-      sol = self.get_best_hole_move(
-        current_hole, 
-        self.available_pieces, 
-        next_expected_count
-      )
-      
-      if sol:
-        winner, score_card, current_hole = sol
-      
-        self.available_pieces.remove(winner['name'])
-        self.used_pieces.append(winner['name'])
-      
-        # hole_rel_window_pos
-        p_y, p_x = winner['coord_pair']
-        pos = [off_y + p_y, off_x + p_x]
-        self.moves.append([winner, score_card, current_hole, pos])
-      else:
-        # TODO: more cases
-        if next_expected_count == 3:
-          piece_size_progression += [2, 1]
-
-    return hole_solution_score
+    return ['magic_wand', orient, position, magic_wand_hole_index]
     
     
   def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):

@@ -146,7 +146,7 @@ def get_piece_size_progression(cell_count):
     if cell_count > 2:
       # has a 6 in there, first choice 3 + 3, rather than 4 + 2
       mult_4 = cell_count - 6
-      piece_size_progression = [4] * (mult_4/4) + [3, 3]
+      piece_size_progression = [4] * int(mult_4/4) + [3, 3]
     else:
       # 2, then 1 + 1
       piece_size_progression = [2]

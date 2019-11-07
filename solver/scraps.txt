@@ -1,0 +1,16 @@
+  {% for move in moves %}
+    {{ move[3] }}
+    {{ move[0] }}
+    {{ grid_pattern(get_piece(move[0]['name'], move[0]['orient']).grid, 'piece') }}
+    {{ grid_pattern(move[2], 'piece') }}
+  {% endfor %}
+  
+  <h3>Windows</h3>
+  {% for coord, window in window_index.items() %}
+    {{ grid_pattern(window.grid, 'piece') }}
+    {% for piece in window.possible_pieces %}
+      {{ piece }}
+      {{ grid_pattern(get_piece(piece['name'], piece['orient']).grid, 'piece') }}
+    {% endfor %}
+    <p>-------</p>
+  {% endfor %}

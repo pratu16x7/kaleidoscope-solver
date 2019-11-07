@@ -1,0 +1,42 @@
+{% macro grid_pattern(grid, classname) -%}
+  <div class="grid {{classname}}">
+    {% for row in grid %}
+    <div class="grid-row">
+      {% for cell in row %}
+      <div class="grid-cell 
+        {% if cell == None %} white 
+        {% elif cell['color'] == 'r' %} red 
+        {% else %} black 
+        {% endif %}
+        
+        {% if cell %}
+          {% if cell['edges'][0] == '1' %} up {% endif %}
+          {% if cell['edges'][1] == '1' %} left {% endif %}
+          {% if cell['edges'][2] == '1' %} down {% endif %}
+          {% if cell['edges'][3] == '1' %} right {% endif %}
+        {% endif %}
+        "> 
+        {% if cell.rel_coord is defined %}
+          {{ cell['rel_coord'] }}
+        {% else %}
+          {{ cell['coord'] }}
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+{%- endmacro %}
+
+
+{% macro move(coord, piece, orient, hole_id)%}
+  <div>
+    {{ coord }} {{ piece }} {{ orient }} {{ hole_id }}
+  </div>
+{%- endmacro %}
+
+{% macro piece_info(piece)%}
+  <div>
+    piece
+  </div>
+{%- endmacro %}

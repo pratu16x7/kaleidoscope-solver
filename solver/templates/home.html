@@ -1,35 +1,6 @@
 {% extends "base.html" %}
 
-{% macro grid_pattern(grid, classname) -%}
-  <div class="grid {{classname}}">
-    {% for row in grid %}
-    <div class="grid-row">
-      {% for cell in row %}
-      <div class="grid-cell 
-        {% if cell == None %} white 
-        {% elif cell['color'] == 'r' %} red 
-        {% else %} black 
-        {% endif %}
-        
-        {% if cell %}
-          {% if cell['edges'][0] == '1' %} up {% endif %}
-          {% if cell['edges'][1] == '1' %} left {% endif %}
-          {% if cell['edges'][2] == '1' %} down {% endif %}
-          {% if cell['edges'][3] == '1' %} right {% endif %}
-        {% endif %}
-        "> 
-        {% if cell.rel_coord is defined %}
-          {{ cell['rel_coord'] }}
-        {% else %}
-          {{ cell['coord'] }}
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    {% endfor %}
-  </div>
-{%- endmacro %}
-
+{% from 'components.html' import grid_pattern %}
 
 {% block content %}
   {{ grid_pattern(data.grid, 'board') }}
@@ -47,22 +18,9 @@
   {% endfor %}
   <p>-------</p>
   
-  {% for move in moves %}
-    {{ move[3] }}
-    {{ move[0] }}
-    {{ grid_pattern(get_piece(move[0]['name'], move[0]['orient']).grid, 'piece') }}
-    {{ grid_pattern(move[2], 'piece') }}
-  {% endfor %}
-  
-  <h3>Windows</h3>
-  {% for coord, window in window_index.items() %}
-    {{ grid_pattern(window.grid, 'piece') }}
-    {% for piece in window.possible_pieces %}
-      {{ piece }}
-      {{ grid_pattern(get_piece(piece['name'], piece['orient']).grid, 'piece') }}
-    {% endfor %}
-    <p>-------</p>
-  {% endfor %}
+  <h3>Moves</h3>
+  <button id="make-move">Make Move</button>
+  <div id="moves"></div>
   
   <h3>Pieces</h3>
   {% for piece_set in piece_sets %}
