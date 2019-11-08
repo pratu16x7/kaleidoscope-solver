@@ -59,7 +59,7 @@ puzzle = Puzzle()
 
 
 class Solver:
-  def __init__(self, board):
+  def __init__(self, board, pieces):
     
     self.board = board
     
@@ -92,7 +92,7 @@ class Solver:
     #   'possible_pieces': [], # with chars
     # }
     
-    self.available_pieces = list(puzzle.get_pieces())
+    self.available_pieces = pieces
     self.used_pieces = []
     
     self.solved_holes = []
@@ -120,11 +120,7 @@ class Solver:
     # go through the holes to see which ones can house magic wand
     # Now solve smallest hole first
     # just display the possible pieces on every stez
-  
 
-  def get_piece_sets(self, names=[]):
-    return puzzle.get_piece_sets(names)
-    
     
   # TODO: will be based on the game state
   # will initially not support backtracking 

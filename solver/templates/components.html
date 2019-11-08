@@ -1,5 +1,5 @@
-{% macro grid_pattern(grid, classname) -%}
-  <div class="grid {{classname}}">
+{% macro grid_pattern(grid, classname, small) -%}
+  <div class="grid {% if small %} grid-small {% endif %} {{classname}}">
     {% for row in grid %}
     <div class="grid-row">
       {% for cell in row %}
@@ -16,10 +16,12 @@
           {% if cell['edges'][3] == '1' %} right {% endif %}
         {% endif %}
         "> 
-        {% if cell.rel_coord is defined %}
-          {{ cell['rel_coord'] }}
-        {% else %}
-          {{ cell['coord'] }}
+        {% if not small %}
+          {% if cell.rel_coord is defined %}
+            {{ cell['rel_coord'] }}
+          {% else %}
+            {{ cell['coord'] }}
+          {% endif %}
         {% endif %}
       </div>
       {% endfor %}
@@ -28,8 +30,8 @@
   </div>
 {%- endmacro %}
 
-{% macro piece_pattern(piece, orient) -%}
-  {{ grid_pattern(get_piece(piece, orient)['grid'], 'piece') }}
+{% macro piece_pattern(piece, orient, small) -%}
+  {{ grid_pattern(get_piece(piece, orient)['grid'], 'piece', small) }}
 {%- endmacro %}
 
 {% macro piece_info(piece) -%}

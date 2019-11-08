@@ -18,9 +18,7 @@ from solver import Puzzle, Solver
 from detector import get_pattern_img, get_black_thresh
 from puzzle import get_board_from_img
 
-
 app = Flask(__name__)
-
 
 puzzle = Puzzle()
 app.jinja_env.globals.update(get_piece=puzzle.get_piece)
@@ -29,14 +27,16 @@ pattern_img = get_pattern_img()
 # TODO: get only the string of the board from img,
 # do everything else via the solver
 board = get_board_from_img(pattern_img, get_black_thresh())
-solver = Solver(board)
+pieces = list(puzzle.get_pieces())
+
+solver = Solver(board, pieces)
 
 @app.route('/')
 def home():
   return render_template('home.html', 
-    data=solver.board, 
+    data=board, 
     holes=solver.all_holes, 
-    piece_sets=solver.get_piece_sets()
+    piece_sets=puzzle.get_piece_sets()
   )
 
 @app.route('/get_next_move')

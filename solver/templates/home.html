@@ -24,6 +24,14 @@
   <button id="make-move">Make Move</button>
   <div id="moves"></div>
   
+  <h3>Pieces</h3>
+  {% for piece_set in piece_sets %}
+  <div class="flex">
+  {% for piece in piece_set %}
+    {{ grid_pattern(piece.grid, 'piece', True) }}
+  {% endfor %}
+  </div>
+  {% endfor %}
   
 {% endblock %}
 
