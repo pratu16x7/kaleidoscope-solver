@@ -28,15 +28,29 @@
   </div>
 {%- endmacro %}
 
-
-{% macro move(coord, piece, orient, hole_id)%}
-  <div>
-    {{ coord }} {{ piece }} {{ orient }} {{ hole_id }}
-  </div>
+{% macro piece_pattern(piece, orient) -%}
+  {{ grid_pattern(get_piece(piece, orient)['grid'], 'piece') }}
 {%- endmacro %}
 
-{% macro piece_info(piece)%}
+{% macro piece_info(piece) -%}
   <div>
     piece
   </div>
 {%- endmacro %}
+
+{% macro move(coord, piece, orient, hole_id) -%}
+  <div>
+    {{ piece_pattern(piece, orient) }}
+    {{ coord }} {{ piece }} {{ orient }} {{ hole_id }}
+  </div>
+{%- endmacro %}
+
+{% macro move_data(coord, piece, orient, hole_id, possible_moves) -%}
+  <div>
+    {{ move(coord, piece, orient, hole_id) }}
+    {% for move in possible_moves %}
+        {{ move }}
+    {% endfor %}
+  </div>
+{%- endmacro %}
+

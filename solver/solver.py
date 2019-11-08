@@ -164,6 +164,9 @@ class Solver:
 
     next_expected_count = self.current_progression.pop(0)
     
+    print('hole', self.current_hole_index)
+    print('next piece size', next_expected_count)
+    
     hole_grid = self.current_hole_grid
     
     sol = self.get_best_hole_move(
@@ -182,7 +185,7 @@ class Solver:
       p_y, p_x = winner['coord_pair']
       pos = [off_y + p_y, off_x + p_x]
       # move = [winner, score_card, hole_grid, pos, hole_solution_score]
-      move = [winner, 'orient', pos, self.current_hole_index]
+      move = [pos, winner['name'], winner['orient'], self.current_hole_index]
       self.moves.append(move)
       
     # TODO: more cases
@@ -191,7 +194,9 @@ class Solver:
     else:
       move = None
       
-    if not get_cell_count(hole_grid):
+    remaining_count = get_cell_count(hole_grid)
+    print('remaining_count', remaining_count)
+    if not remaining_count:
         if self.holes:
           self.current_hole = self.holes.pop(0)
           self.current_hole_index += 1
@@ -201,6 +206,41 @@ class Solver:
           self.current_progression = self.progressions.pop(0)
         else:
           print('SOLVED!!!')
+    # TODO: Bug in the scoring system! Switch this off and see
+    # NEED to round up all highest scorers and see how their scores were calculated and why they lost
+    # TODO: store away possible others in another dict by move_id
+    # that means move can be an ORDERED DICT
+    # - flex the holes
+    # - don't show pieces
+    
+    # - include scss
+    # - make grid tiny version without numbers
+    
+    # - store possible pieces in separate dict
+    # - store moves in a dict
+    # - flex table entries and possible pieces with their scores
+    
+    
+    
+    # - See the show-off of l-right-r and small wand scores, where L has crookedness, wand has span
+    #   scores should not be much different, just pick one or make the tree now
+    
+    #   You can also favour small wand's other potential position in ANOTHER hole, to show it is closer 
+    #   board border in the other hole. Obscure condition (specific to this case) to break the tie. 
+    #   (And bias in our favour >=<)
+    #   
+    #   All the generic work you're putting in now will help us in our next Pattern that we take up to solve.
+    
+    # make smaller version of grid
+    else:
+      self.current_hole_grid = hole_grid
+          
+    # Next up, 3 = 2+1 flow/bug
+    # better move template
+    # then, include the small_wand in the scoring system too
+    # make small_wand lose
+    # include the big hole in the solving
+    # ... then, to be continued
     
     return move
       
@@ -268,7 +308,7 @@ class Solver:
     
     magic_wand_hole['grid'] = changed_hole
     
-    return ['magic_wand', orient, position, magic_wand_hole_index]
+    return [position, 'magic_wand', orient, magic_wand_hole_index]
     
     
   def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):

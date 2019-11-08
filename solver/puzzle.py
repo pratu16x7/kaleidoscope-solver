@@ -873,7 +873,6 @@ def get_long_windows(patt):
         if not longest_cts_length_coord:
           longest_cts_length_coord = cell['rel_coord_pair']
         longest_cts_length += 1
-        print('vert', cell['rel_coord_pair'], longest_cts_length)
         
     if longest_cts_length >= 4:
       wins = []

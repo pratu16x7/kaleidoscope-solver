@@ -13,21 +13,17 @@
   </div>
   
   <h3>Holes, smallest first</h3>
+  <div class="holes flex">
   {% for hole in holes %}
     {{ grid_pattern(hole.grid, 'piece') }}
   {% endfor %}
+  </div>
   <p>-------</p>
   
   <h3>Moves</h3>
   <button id="make-move">Make Move</button>
   <div id="moves"></div>
   
-  <h3>Pieces</h3>
-  {% for piece_set in piece_sets %}
-    {% for piece in piece_set %}
-      {{ grid_pattern(piece.grid, 'piece') }}
-    {% endfor %}
-    <p>Done</p>
-  {% endfor %}
+  
 {% endblock %}
 

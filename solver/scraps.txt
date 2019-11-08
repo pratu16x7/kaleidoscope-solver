@@ -14,3 +14,12 @@
     {% endfor %}
     <p>-------</p>
   {% endfor %}
+  
+  <h3>Pieces</h3>
+  {% for piece_set in piece_sets %}
+    {% for piece in piece_set %}
+      {{ grid_pattern(piece.grid, 'piece') }}
+    {% endfor %}
+    <p>Done</p>
+  {% endfor %}
+  

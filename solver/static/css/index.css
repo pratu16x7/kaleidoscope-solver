@@ -2,7 +2,7 @@
   width: 170px;
 }
 .piece {
-  margin: 5px 0;
+  margin: 5px;
 }
 
 .grid {
@@ -51,4 +51,8 @@
 
 .grid-cell.down {
   border-bottom: 2px solid #0f0;
+}
+
+.flex {
+  display: flex;
 }
