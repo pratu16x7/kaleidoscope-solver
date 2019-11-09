@@ -30,6 +30,40 @@
   </div>
 {%- endmacro %}
 
+{% macro grid_subtraction(old_grid, new_grid, small, classname) -%}
+  <div class="grid {% if small %} grid-small {% endif %} {{classname}}">
+    {% for row in old_grid %}
+    {% set outer_loop = loop %}
+    <div class="grid-row">
+      {% for cell in row %}
+      {% set eaten_up = new_grid[outer_loop.index - 1][loop.index - 1] == None %}
+      <div class="grid-cell 
+        {% if cell == None %} white 
+        {% elif cell['color'] == 'r' %} {% if eaten_up %} light_red {% else %} red {% endif %} 
+        {% else %} {% if eaten_up %} grey {% else %} black {% endif %}  
+        {% endif %}
+        
+        {% if cell %}
+          {% if cell['edges'][0] == '1' %} up {% endif %}
+          {% if cell['edges'][1] == '1' %} left {% endif %}
+          {% if cell['edges'][2] == '1' %} down {% endif %}
+          {% if cell['edges'][3] == '1' %} right {% endif %}
+        {% endif %}
+        "> 
+        {% if not small %}
+          {% if cell.rel_coord is defined %}
+            {{ cell['rel_coord'] }}
+          {% else %}
+            {{ cell['coord'] }}
+          {% endif %}
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+{%- endmacro %}
+
 {% macro piece_pattern(piece, orient, small) -%}
   {{ grid_pattern(get_piece(piece, orient)['grid'], 'piece', small) }}
 {%- endmacro %}
@@ -40,14 +74,33 @@
   </div>
 {%- endmacro %}
 
-{% macro move(coord, piece, orient, hole_id) -%}
+{% macro score_data(scores) -%}
   <div>
-    {{ piece_pattern(piece, orient) }}
-    {{ coord }} {{ piece }} {{ orient }} {{ hole_id }}
+  {{ scores.edge }} {{ ' + ' }} {{ scores.deviation }} {{ ' + ' }} {{ scores.span }} {{ ' = ' }} {{ scores.total }}
   </div>
 {%- endmacro %}
 
-{% macro move_data(coord, piece, orient, hole_id, possible_moves) -%}
+{% macro move(coord, piece, orient, hole_id, scores, old_grid, new_grid, possible_moves) -%}
+  <div class="move flex">
+    <p>===========MOVE=============</p>
+    {# coord, hole_id are implicitly shown in grid_subtraction hence not printed #}
+    {{ grid_subtraction(old_grid, new_grid, True, 'piece') }}
+    
+    {{ piece_pattern(piece, orient) }}
+    {{ score_data(scores) }}
+    
+    <div class='flex'>
+      {% for move in possible_moves %}
+          <div>
+            {{ piece_pattern(move.piece, move.orient, True) }}
+            {{ coord }} {{ score_data(move.scores) }}
+          </div>
+      {% endfor %}
+    </div>
+  </div>
+{%- endmacro %}
+
+{% macro move_data(coord, piece, orient, hole_id, scores, old_grid, new_grid, possible_moves) -%}
   <div>
     {{ move(coord, piece, orient, hole_id) }}
     {% for move in possible_moves %}

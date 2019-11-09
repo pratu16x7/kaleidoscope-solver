@@ -164,6 +164,7 @@ class Solver:
     print('next piece size', next_expected_count)
     
     hole_grid = self.current_hole_grid
+    new_hole_grid = None
     
     sol = self.get_best_hole_move(
       hole_grid, 
@@ -172,16 +173,26 @@ class Solver:
     )
     
     if sol:
-      winner, score_card, hole_grid = sol
+      piece, orient, coord_pair, scores, new_hole_grid, other_possible_pieces = sol
     
-      self.available_pieces.remove(winner['name'])
-      self.used_pieces.append(winner['name'])
+      self.available_pieces.remove(piece)
+      self.used_pieces.append(piece)
     
       # hole_rel_window_pos
-      p_y, p_x = winner['coord_pair']
+      p_y, p_x = coord_pair
       pos = [off_y + p_y, off_x + p_x]
-      # move = [winner, score_card, hole_grid, pos, hole_solution_score]
-      move = [pos, winner['name'], winner['orient'], self.current_hole_index]
+      
+      move = [
+          pos, 
+          piece, 
+          orient, 
+          self.current_hole_index, 
+          
+          scores, 
+          hole_grid, 
+          new_hole_grid, 
+          other_possible_pieces
+      ]
       self.moves.append(move)
       
     # TODO: more cases
@@ -189,8 +200,9 @@ class Solver:
       self.current_progression = [2, 1] + self.current_progression
     else:
       move = None
-      
-    remaining_count = get_cell_count(hole_grid)
+    
+    now_hole_grid = new_hole_grid or hole_grid
+    remaining_count = get_cell_count(new_hole_grid)
     print('remaining_count', remaining_count)
     if not remaining_count:
         if self.holes:
@@ -202,8 +214,7 @@ class Solver:
           self.current_progression = self.progressions.pop(0)
         else:
           print('SOLVED!!!')
-    # TODO: Bug in the scoring system! Switch this off and see
-    # NEED to round up all highest scorers and see how their scores were calculated and why they lost
+    
     # TODO: store away possible others in another dict by move_id
     # that means move can be an ORDERED DICT
     # - flex the holes
@@ -216,8 +227,6 @@ class Solver:
     # - store moves in a dict
     # - flex table entries and possible pieces with their scores
     
-    
-    
     # - See the show-off of l-right-r and small wand scores, where L has crookedness, wand has span
     #   scores should not be much different, just pick one or make the tree now
     
@@ -227,9 +236,10 @@ class Solver:
     #   
     #   All the generic work you're putting in now will help us in our next Pattern that we take up to solve.
     
-    # make smaller version of grid
+    # TODO: Bug in the scoring system! Switch this off and see
+    # NEED to round up all highest scorers and see how their scores were calculated and why they lost
     else:
-      self.current_hole_grid = hole_grid
+      self.current_hole_grid = new_hole_grid
           
     # Next up, 3 = 2+1 flow/bug
     # better move template
@@ -246,7 +256,7 @@ class Solver:
     
     for idx, hole in enumerate(self.all_holes):
       # if size big, select for magic wand
-      if hole['dim'][0] == 8 or hole['dim'][1] == 8:
+      if hole['max_span'] == 8:
          # TODO: Multiple holes might have magic wand positions
          magic_wand_hole = hole
          magic_wand_hole_index = idx
@@ -304,7 +314,17 @@ class Solver:
     
     magic_wand_hole['grid'] = changed_hole
     
-    return [position, 'magic_wand', orient, magic_wand_hole_index]
+    return [
+        position, 
+        'magic_wand', 
+        orient, 
+        magic_wand_hole_index,
+        
+        max_edge_score, 
+        grid, 
+        changed_hole, 
+        [ ]
+    ]
     
     
   def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):
@@ -327,15 +347,12 @@ class Solver:
       
       all_possible_pieces += possible_pieces
       
+      # only store deduced info, not intermediate info
       window_index[window_id] = {
         'coord': coord,
         'coord_pair': [y, x],
         'type': window_id[2],  # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
-        
-        'grid': window,
-        'no_of_cells': no_of_cells,
-        'cell_coord_list': cell_coord_list,
-        
+          
         'possible_pieces': possible_pieces
       }
       
@@ -352,11 +369,7 @@ class Solver:
 #           'coord': coord,
 #           'coord_pair': [y, x],
 #           'type': window_id[2],  # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
-#
-#           'grid': window,
-#           'no_of_cells': no_of_cells,
-#           'cell_coord_list': cell_coord_list,
-#
+
 #           'possible_pieces': possible_pieces
 #         }
         
@@ -365,18 +378,32 @@ class Solver:
     if not all_possible_pieces:
       return
       
-    all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores'][-1], reverse=True)
+    all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores']['total'], reverse=True)
     
     # TODO: IMP, Also check if piece breaks the hole
     # In case of a tie, can check which one makes hole less edge-ful (smoother hole is left in ideal situation)
     highest_scoring_piece = all_possible_pieces[0]
+    other_possible_pieces = all_possible_pieces[1:4]
     
     selected_window = window_index[highest_scoring_piece['window_id']]
     
     open_edges = highest_scoring_piece['open_edges']
+    # TODO: Don't need all of highest_scoring_piece
+    # Maybe also cleanup fill_piece implementation
     changed_hole = fill_piece(hole, highest_scoring_piece, selected_window['coord_pair'], open_edges)
       
-    return highest_scoring_piece, window_index, changed_hole
+      
+    # Pass on next possible pieces instead of window index. Do we need the index fo r the possible pices?
+    # We needed for this piece to fill it, have to store the index some where and keep
+    # or simply store the window along with each possible instead of the entire index
+    # TODO: we need to be able to remove a piece too while backtracking
+    # Easier way is to just saving a defined game state at every move, that enables all the other logic to stay constant. The state will probably consist of all the self stuff
+    # For now, just pieces and their scores, because that's all we need to see and track
+    # TODO: Ideally possible pieces scores should be compared accross windows :P
+
+    hsp = highest_scoring_piece
+    
+    return hsp['piece'], hsp['orient'], hsp['coord_pair'], hsp['scores'], changed_hole, other_possible_pieces
 
 
    
@@ -415,17 +442,54 @@ def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, n
     if info['size'] <= no_of_cells and info['size'] >= next_expected_count:
       
       orients = puzzle.get_orients(name)
+      
+      primary_orient = orients[0]
+      
       for idx, orient in enumerate(orients):
         piece_cell_list = orient['cell_coord_list']
         
         if set(piece_cell_list).issubset(cell_coord_list):
            piece_grid = orient['grid']
-           scores, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
+           edge_scores, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
+           
+           edge_score = edge_scores[-1]
+           
+           BONUS_SCORE = 1
+           TETRA_AVG_SPAN = 3
+           extra_span = info['max_span'] - TETRA_AVG_SPAN
+           extra_span_score = extra_span * BONUS_SCORE if extra_span > 0 else 0
+
+           DEVIATE_INCR = 0.25
+           total_deviation_score = 0
+           piece_grid = primary_orient['grid']
+           if len(piece_grid) > 1:
+               total_deviation_score += DEVIATE_INCR
+               
+               none_row = None
+               highly_crooked = False # All are none rows
+               for row in piece_grid:
+                   if None in row:
+                       if not none_row:
+                           none_row = row
+                       else:
+                           highly_crooked = True
+               
+               if highly_crooked:
+                   total_deviation_score += 2 * DEVIATE_INCR
+               elif none_row:
+                   if none_row[0] is None and none_row[-1] is None:
+                       total_deviation_score += 1 * DEVIATE_INCR
+           
            piece_data = {
-             'name': name,
+             'piece': name,
              'orient': idx,
              'cell_coord_list': piece_cell_list,
-             'scores': scores,
+             'scores': {
+               'edge': edge_score,
+               'deviation': total_deviation_score,
+               'span': extra_span_score,
+               'total': edge_score + total_deviation_score + extra_span_score
+             },
              'window_id': window_id,
              'coord_pair': coord_pair,
              'open_edges': open_edges,

@@ -1,3 +1,8 @@
+body {
+  background-color: #394449;
+  color: #fff;
+  font-family: sans-serif; }
+
 .board {
   width: 170px; }
 
@@ -13,6 +18,7 @@
 .grid-cell {
   float: left;
   color: pink;
+  font-size: 10px;
   width: 16px;
   height: 16px; }
 
@@ -33,6 +39,18 @@
 .grid-cell.white {
   background-color: #FFF;
   border: 2px solid #FFF; }
+
+.grid-cell.pink {
+  background-color: #e500ff;
+  border: 2px solid #e500ff; }
+
+.grid-cell.light_red {
+  background-color: #ffaaaa;
+  border: 2px solid #ffaaaa; }
+
+.grid-cell.grey {
+  background-color: #a5a5a5;
+  border: 2px solid #a5a5a5; }
 
 .grid-cell.left {
   border-left: 2px solid #0f0; }

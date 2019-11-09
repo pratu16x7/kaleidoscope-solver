@@ -157,8 +157,6 @@ def get_piece_size_progression(cell_count):
     piece_size_progression = [4] * int(cell_count/4) + [remainder]
     
   return piece_size_progression
-    
-    
 
 def get_piece_to_window_edge_scores(piece, window):
   shape_edges_count = 0
@@ -193,9 +191,9 @@ def get_piece_to_window_edge_scores(piece, window):
                       piece_open_edges[block['rel_coord']] = open_edges
                        
             
-  w_match = matched_edges_count/window_edges_count 
+  w_match = matched_edges_count/window_edges_count
   s_match = matched_edges_count/shape_edges_count
-  w_x_s = w_match * s_match 
+  w_x_s = w_match * s_match
   
   # return {
   #     # 'SE': shape_edges_count,
@@ -208,7 +206,12 @@ def get_piece_to_window_edge_scores(piece, window):
   # }
 
   # NOTE: Plenty of instances where readability is compromised for perf 
-  scores = [matched_edges_count, w_match, s_match, w_x_s]
+  scores = [
+    matched_edges_count, 
+    round(w_match * 10, 2), 
+    round(s_match * 10, 2), 
+    round(w_x_s * 10, 2)
+  ]
   return scores, piece_open_edges
   
 # ***
@@ -301,6 +304,9 @@ def get_pattern_and_stats(s):
     
     'size': len(cells),
     'dim': [grid_h, grid_w],
+    
+    'max_span': max(grid_h, grid_w),
+    
     'type': cell_type,
     'colored_cells_cnt': colored_cells_cnt,
     'offset': [min_y, min_x],
