@@ -97,39 +97,6 @@ def get_pieces():
     pieces_reg[name] = piece
     orients_reg[name] = orients
   return pieces_reg, orients_reg
-  
-  
-def fill_piece(hole, piece, window_coord_pair, open_edges={}, calc_edges=False):
-    changed_hole = copy.deepcopy(hole)
-    wy, wx = window_coord_pair
-    for coord_t in piece['cell_coord_list']:
-      cy, cx = int(coord_t[0]), int(coord_t[1])
-      y, x = wy + cy, wx + cx
-      
-      filled_cell = changed_hole[y][x]
-      changed_hole[y][x] = None
-      coord = coord_t[:2]
-      
-      if calc_edges:
-          piece_cell = piece['grid'][cy][cx]
-          
-          coord_open_edges = []
-          for idx, edge in enumerate(filled_cell['edges']):
-              if piece_cell['edges'][idx] != edge:
-                coord_open_edges.append(idx) 
-      else:
-          coord_open_edges = open_edges.get(coord, [])
-
-      for edge_idx in coord_open_edges:
-        dy, dx = DIR_OPS[edge_idx]
-        cell_to_change = changed_hole[y + dy][x + dx]
-        
-        change_edge_idx = DIR_REVS[edge_idx]
-        edge_list = list(cell_to_change['edges'])
-        edge_list[change_edge_idx] = '1'
-        cell_to_change['edges'] = "".join(edge_list)
-          
-    return changed_hole
 
 
 def get_piece_size_progression(cell_count):
@@ -159,9 +126,9 @@ def get_piece_size_progression(cell_count):
   return piece_size_progression
 
 def get_piece_to_window_edge_scores(piece, window):
-  shape_edges_count = 0
   matched_edges_count = 0
   window_edges_count = 0 
+  shape_edges_count = 0
   
   # unmatched piece edges
   piece_open_edges = {}
@@ -169,7 +136,7 @@ def get_piece_to_window_edge_scores(piece, window):
   for row in window:
       for block in row:
           if block:
-              window_edges_count += len(block['edges'])
+              window_edges_count += block['edges'].count('1')
               # if len(piece[0]) >= block['coord'][1] + 1:
               # TODO: needs custom rules for how a square 
               # (or a smaller piece than window) 
@@ -185,34 +152,104 @@ def get_piece_to_window_edge_scores(piece, window):
                               matched_edges_count += 1
                           else:
                               open_edges.append(idx)
-                      if block['edges'][idx] == '1':
-                          window_edges_count += 1
                   if open_edges:
                       piece_open_edges[block['rel_coord']] = open_edges
-                       
-            
-  w_match = matched_edges_count/window_edges_count
-  s_match = matched_edges_count/shape_edges_count
-  w_x_s = w_match * s_match
-  
-  # return {
-  #     # 'SE': shape_edges_count,
-  #     # 'WE': window_edges_count,
-  #     # 'ME': matched_edges_count,
-  #     #
-  #     # 'W_MATCH': w_match,
-  #     # 'S_MATCH': s_match,
-  #     'W_X_S': w_x_s,
-  # }
 
-  # NOTE: Plenty of instances where readability is compromised for perf 
-  scores = [
-    matched_edges_count, 
-    round(w_match * 10, 2), 
-    round(s_match * 10, 2), 
-    round(w_x_s * 10, 2)
-  ]
-  return scores, piece_open_edges
+  # NOTE: piece_open_edges, Plenty of instances where readability is compromised for perf 
+
+  return matched_edges_count, window_edges_count, shape_edges_count, piece_open_edges
+  
+def get_edge_matches_score(match_count, win_edge_count, piece_edge_count):
+  return round((match_count/win_edge_count)*(match_count/piece_edge_count) * 10, 2)
+  
+def get_long_windows(patt):
+  # edge scores first for 4 line
+  # but first existence cells, for hori and vert
+  # TECHNIQUE: Small wand having edge cover score of 5
+  # or more, and 3 being on one side, 1 at end 
+  # signifies only placing it when it is snug
+  
+  h = len(patt)
+  w = len(patt[0])
+  
+  hori_windows = []
+  for row in patt:
+    longest_cts_length = 0
+    longest_cts_length_coord = None
+    for cell in row:
+      if not cell:
+        if longest_cts_length >= 4:
+          break
+        else:
+          longest_cts_length = 0
+          longest_cts_length_coord = None
+      else:
+        if not longest_cts_length_coord:
+          longest_cts_length_coord = cell['rel_coord_pair']
+        longest_cts_length += 1
+        
+    if longest_cts_length >= 4:
+      hori_windows = [] # edge_cache = {}
+      
+      y, x = longest_cts_length_coord
+      
+      # only take touching windows
+      # TODO: check if the 5 edge count is because of 2-1-2
+      for start in [x, x + longest_cts_length - 4]:
+        xi = start
+        print('longest', y, xi)
+        edge_count = sum([patt[y][xi + i]['edges'].count('1') for i in range(4)]) 
+        
+        if edge_count >= 5:
+          color = patt[y][xi]['color']
+          hori_windows.append({
+            'coord': [y, xi],
+            'color': color,
+            'orient': 0 if color == 'r' else 2,
+            'edge_count': edge_count,
+            'edge_scores': (edge_count, edge_count, 10),
+            'type': 'hori'
+          })
+        
+  vert_windows = []
+  for x in range(w):
+    longest_cts_length = 0
+    longest_cts_length_coord = None
+    for y in range(h):
+      cell = patt[y][x]
+      if not cell:
+        if longest_cts_length >= 4:
+          break
+        else:
+          longest_cts_length = 0
+          longest_cts_length_coord = None
+      else:
+        if not longest_cts_length_coord:
+          longest_cts_length_coord = cell['rel_coord_pair']
+        longest_cts_length += 1
+        
+    if longest_cts_length >= 4:
+      vert_windows = [] # edge_cache = {}
+      
+      y, x = longest_cts_length_coord
+      
+      # only take touching windows
+      for start in [y, y + longest_cts_length - 4]:
+        yi = start
+        edge_count = sum([patt[yi + i][x]['edges'].count('1') for i in range(4)]) 
+        
+        if edge_count >= 5:
+          color = patt[yi][x]['color']
+          vert_windows.append({
+            'coord': [yi, x],
+            'color': color,
+            'orient': 1 if color == 'r' else 3,
+            'edge_count': edge_count,
+            'edge_scores': (edge_count, edge_count, 10), 
+            'type': 'vert'
+          })
+        
+  return hori_windows, vert_windows
   
 # ***
 def get_pattern_and_stats(s):
@@ -827,73 +864,6 @@ WINDOW_DIMS = {
   'sh': []
 }
 
-def get_long_windows(patt):
-  # edge scores first for 4 line
-  # but first existence cells, for hori and vert
-  
-  h = len(patt)
-  w = len(patt[0])
-  
-  hori_windows = []
-  for row in patt:
-    longest_cts_length = 0
-    longest_cts_length_coord = None
-    for cell in row:
-      if not cell:
-        if longest_cts_length >= 4:
-          break
-        else:
-          longest_cts_length = 0
-          longest_cts_length_coord = None
-      else:
-        if not longest_cts_length_coord:
-          longest_cts_length_coord = cell['rel_coord_pair']
-        longest_cts_length += 1
-        
-    if longest_cts_length >= 4:
-      wins = []
-      for i in range(longest_cts_length - 4 + 1):
-        coord_pair = longest_cts_length_coord
-        wins.append({
-          'coord': [coord_pair[0], coord_pair[1] + i],
-          'color': patt[coord_pair[0]][coord_pair[1] + i]['color']
-          # 'type': 'hori'
-        })
-      
-      # only take touching windows
-      hori_windows = [wins[0], wins[-1]] if len(wins) > 1 else wins
-        
-  vert_windows = []
-  for x in range(w):
-    longest_cts_length = 0
-    longest_cts_length_coord = None
-    for y in range(h):
-      cell = patt[y][x]
-      if not cell:
-        if longest_cts_length >= 4:
-          break
-        else:
-          longest_cts_length = 0
-          longest_cts_length_coord = None
-      else:
-        if not longest_cts_length_coord:
-          longest_cts_length_coord = cell['rel_coord_pair']
-        longest_cts_length += 1
-        
-    if longest_cts_length >= 4:
-      wins = []
-      for i in range(longest_cts_length - 4 + 1):
-        coord_pair = longest_cts_length_coord
-        wins.append({
-          'coord': [coord_pair[0] + i, coord_pair[1]],
-          'color': patt[coord_pair[0] + i][coord_pair[1]]['color']
-          # 'type': 'vert'
-        })
-        
-      # only take touching windows
-      vert_windows = [wins[0], wins[-1]] if len(wins) > 1 else wins
-        
-  return hori_windows, vert_windows
 
 def get_valid_windows(patt, next_expected_piece_count, small_wand_too):
   valid_windows = []

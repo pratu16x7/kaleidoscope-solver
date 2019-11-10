@@ -76,7 +76,7 @@
 
 {% macro score_data(scores) -%}
   <div>
-  {{ scores.edge }} {{ ' + ' }} {{ scores.deviation }} {{ ' + ' }} {{ scores.span }} {{ ' = ' }} {{ scores.total }}
+  {{ scores.match_c }} {{ ' | ' }} {{ scores.win_c }} {{ ' | ' }} {{ scores.piece_c }} {{ ' + ' }} {{ scores.deviation }} {{ ' + ' }} {{ scores.span }} {{ ' = ' }} {{ scores.total }}
   </div>
 {%- endmacro %}
 

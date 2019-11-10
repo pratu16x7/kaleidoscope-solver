@@ -5,6 +5,8 @@
 
 # Goal: to play one puzzle that I know to solve, and all its steps, most determinate, only a few non-determinate
 
+# Rule: only store deduced info, not intermediate info
+
 
 # Global state (The decision tree level, all knowing, global state)
 
@@ -17,8 +19,10 @@ from puzzle import (
   get_valid_windows, 
   get_long_windows,
   get_piece_to_window_edge_scores, 
+  get_edge_matches_score,
   get_cell_count, 
-  fill_piece,
+  DIR_OPS,
+  DIR_REVS
 )
 
 
@@ -206,6 +210,8 @@ class Solver:
       move = None
     
     now_hole_grid = new_hole_grid or hole_grid
+    
+    # TODO: [bug] Temp Red Monomino move has trouble, place small_wand in first big hole and check
     remaining_count = get_cell_count(new_hole_grid)
     print('remaining_count', remaining_count)
     if not remaining_count:
@@ -240,7 +246,7 @@ class Solver:
     #   
     #   All the generic work you're putting in now will help us in our next Pattern that we take up to solve.
     
-    # TODO: Bug in the scoring system! Switch this off and see
+    # TODO: [bug] in the scoring system! Switch this off and see
     # NEED to round up all highest scorers and see how their scores were calculated and why they lost
     else:
       self.current_hole_grid = new_hole_grid
@@ -313,8 +319,7 @@ class Solver:
     orient = orient_map[selected_pos[1] + selected_pos[2]]
     
     # place the magic wand and get new hole
-    piece = puzzle.get_piece('magic_wand', orient)
-    changed_hole = fill_piece(grid, piece, position, {}, True)
+    changed_hole = fill_piece(grid, 'magic_wand', orient, position, None)
     
     magic_wand_hole['grid'] = changed_hole
     
@@ -324,7 +329,14 @@ class Solver:
         orient, 
         magic_wand_hole_index,
         
-        max_edge_score, 
+        {
+             'match': max_edge_score,
+             # 'm_w': m_w,
+             # 'm_p': m_p,
+             'deviation': 0,
+             # 'span': span,
+             'total': max_edge_score
+        }, 
         grid, 
         changed_hole, 
         [ ]
@@ -351,74 +363,25 @@ class Solver:
       
       all_possible_pieces += possible_pieces
       
-      # only store deduced info, not intermediate info
-      window_index[window_id] = {
-        # 'coord': coord,
-        'coord_pair': [y, x],
-        'type': window_id[2],  # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
-          
-        'possible_pieces': possible_pieces
-      }
-      
     if small_wand_too:
       hori_postions, vert_postions = get_long_windows(hole)
-      print('hori_postions', hori_postions)
-      print('------')
-      print('vert_postions', vert_postions)
       
-      
-      for pos in hori_postions:
-          
+      for pos in hori_postions + vert_postions:
+          match_c, win_c, piece_c = pos['edge_scores']
+          SPAN_BONUS = 0.25
           all_possible_pieces.append({
              'piece': 'small_wand',
-             'orient': 0 if pos['color'] == 'r' else 2,
+             'orient': pos['orient'],
              'coord_pair': pos['coord'],
              'scores': {
-                 # 'edge': edge_score,
-                 # 'deviation': total_deviation_score,
-                 # 'span': extra_span_score,
-                 # 'total': edge_score + total_deviation_score + extra_span_score
-                 'edge': 1,
-                 'deviation': 1,
-                 'span': 1,
-                 'total': 3
+                 'match_c': match_c,
+                 'win_c': win_c,
+                 'piece_c': piece_c,
+                 'deviation': 0,
+                 'span': SPAN_BONUS,
+                 'total': get_edge_matches_score(match_c, win_c, piece_c) + SPAN_BONUS
              },
-             # 'cell_coord_list': piece_cell_list,
-             # 'window_id': window_id,
-             # 'open_edges': open_edges,
           })
-          
-      for pos in vert_postions:
-          all_possible_pieces.append({
-             'piece': 'small_wand',
-             'orient': 1 if pos['color'] == 'r' else 3,
-             'coord_pair': pos['coord'],
-             'scores': {
-                 # 'edge': edge_score,
-                 # 'deviation': total_deviation_score,
-                 # 'span': extra_span_score,
-                 # 'total': edge_score + total_deviation_score + extra_span_score
-                 'edge': 1,
-                 'deviation': 1,
-                 'span': 1,
-                 'total': 3.1
-             },
-             # 'cell_coord_list': piece_cell_list,
-             # 'window_id': window_id,
-             # 'open_edges': open_edges,
-          })
-          
-      
-      
-    # TODO: SAVE ALL THE SELECTED BEST CHOICES AT EVERY DECISION STEP
-      
-      # for win in long_wins:
-#         window_index[window_id] = {
-#           'coord_pair': [y, x],
-#           'type': window_id[2],  # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
-
-#           'possible_pieces': possible_pieces
-#         }
         
     # TODO: More graceful failing, for handling in the caller
     # print(windows)
@@ -429,16 +392,21 @@ class Solver:
     
     # TODO: IMP, Also check if piece breaks the hole
     # In case of a tie, can check which one makes hole less edge-ful (smoother hole is left in ideal situation)
+    
     highest_scoring_piece = all_possible_pieces[0]
-    other_possible_pieces = all_possible_pieces[1:4]
+    other_possible_pieces = all_possible_pieces[1:5]
     
-    # selected_window = window_index[highest_scoring_piece['window_id']]
-    
-    open_edges = highest_scoring_piece['open_edges']
     # TODO: Don't need all of highest_scoring_piece
     # Maybe also cleanup fill_piece implementation
     # TODO: remove coord_pair param, or expand piece param into only what's needed
-    changed_hole = fill_piece(hole, highest_scoring_piece, highest_scoring_piece['coord_pair'], open_edges)
+    
+    changed_hole = fill_piece(
+        hole, 
+        highest_scoring_piece['piece'], 
+        highest_scoring_piece['orient'], 
+        highest_scoring_piece['coord_pair'],  
+        highest_scoring_piece.get('open_edges', None),
+    )
       
       
     # Pass on next possible pieces instead of window index. Do we need the index fo r the possible pices?
@@ -447,11 +415,52 @@ class Solver:
     # TODO: we need to be able to remove a piece too while backtracking
     # Easier way is to just saving a defined game state at every move, that enables all the other logic to stay constant. The state will probably consist of all the self stuff
     # For now, just pieces and their scores, because that's all we need to see and track
-    # TODO: Ideally possible pieces scores should be compared accross windows :P
+    
+    # TODO: another type of score for wand pieces, distance from border, negative if higher distance
+    # TODO: Ideally possible pieces scores should be compared across windows :P
 
     hsp = highest_scoring_piece
     
     return hsp['piece'], hsp['orient'], hsp['coord_pair'], hsp['scores'], changed_hole, other_possible_pieces
+    
+
+
+def fill_piece(hole, piece, orient, window_coord_pair, open_edges):
+    changed_hole = copy.deepcopy(hole)
+    wy, wx = window_coord_pair
+    
+    orient = puzzle.get_piece(piece, orient)
+    cell_coord_list = orient['cell_coord_list']
+    grid = orient['grid']
+    
+    for coord_t in cell_coord_list:
+      cy, cx = int(coord_t[0]), int(coord_t[1])
+      y, x = wy + cy, wx + cx
+      
+      filled_cell = changed_hole[y][x]
+      changed_hole[y][x] = None
+      coord = coord_t[:2]
+      
+      if open_edges is None and open_edges is not []:
+          piece_cell = grid[cy][cx]
+          
+          coord_open_edges = []
+          for idx, edge in enumerate(filled_cell['edges']):
+              if piece_cell['edges'][idx] != edge:
+                coord_open_edges.append(idx) 
+      else:
+          coord_open_edges = open_edges.get(coord, [])
+
+      for edge_idx in coord_open_edges:
+        dy, dx = DIR_OPS[edge_idx]
+        cell_to_change = changed_hole[y + dy][x + dx]
+        
+        change_edge_idx = DIR_REVS[edge_idx]
+        edge_list = list(cell_to_change['edges'])
+        edge_list[change_edge_idx] = '1'
+        cell_to_change['edges'] = "".join(edge_list)
+          
+    return changed_hole
 
 
    
@@ -498,14 +507,12 @@ def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, n
         
         if set(piece_cell_list).issubset(cell_coord_list):
            piece_grid = orient['grid']
-           edge_scores, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
+           match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
            
-           edge_score = edge_scores[-1]
-           
-           BONUS_SCORE = 1
-           TETRA_AVG_SPAN = 3
-           extra_span = info['max_span'] - TETRA_AVG_SPAN
-           extra_span_score = extra_span * BONUS_SCORE if extra_span > 0 else 0
+           # BONUS_SCORE = 1
+           # TETRA_AVG_SPAN = 3
+           # extra_span = info['max_span'] - TETRA_AVG_SPAN
+           # extra_span_score = extra_span * BONUS_SCORE if extra_span > 0 else 0
 
            DEVIATE_INCR = 0.25
            total_deviation_score = 0
@@ -533,10 +540,12 @@ def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, n
              'orient': idx,
              'cell_coord_list': piece_cell_list,
              'scores': {
-               'edge': edge_score,
+               'match_c': match_c,
+               'win_c': win_c,
+               'piece_c': piece_c,
                'deviation': total_deviation_score,
-               'span': extra_span_score,
-               'total': edge_score + total_deviation_score + extra_span_score
+               # 'span': extra_span_score,
+               'total': get_edge_matches_score(match_c, win_c, piece_c) + total_deviation_score
              },
              'window_id': window_id,
              'coord_pair': coord_pair,
@@ -547,6 +556,8 @@ def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, n
            # store open edges and keep: wherever piece had an edge and window had open edge
            
   return possible_pieces
+  
+
 
 # TODO: Rarer pieces get a 0.5 - 0.95 (< 1) edge point boost, 
 # so that if a rare and a simple have two edges open
