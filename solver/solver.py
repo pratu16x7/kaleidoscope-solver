@@ -16,6 +16,7 @@ from puzzle import (
   get_pieces, 
   get_piece_size_progression, 
   get_holes_and_stats, 
+  get_holes,
   get_valid_windows, 
   get_long_windows,
   get_piece_to_window_edge_scores, 
@@ -84,7 +85,7 @@ class Solver:
       
     self.all_holes = sorted(self.all_holes, key=lambda x: x['size'])
     
-    self.holes = self.all_holes[:-1]
+    self.holes = self.all_holes[:]
     self.progressions = [get_piece_size_progression(hole['size']) for hole in self.holes]
     
     # this is only per state
@@ -388,13 +389,31 @@ class Solver:
     if not all_possible_pieces:
       return
       
-    all_possible_pieces = sorted(all_possible_pieces, key=lambda x: x['scores']['total'], reverse=True)
+    selected_pieces = sorted(all_possible_pieces, key=lambda x: x['scores']['win_c'], reverse=True)[:6]
     
     # TODO: IMP, Also check if piece breaks the hole
     # In case of a tie, can check which one makes hole less edge-ful (smoother hole is left in ideal situation)
     
-    highest_scoring_piece = all_possible_pieces[0]
-    other_possible_pieces = all_possible_pieces[1:5]
+    consistent_pieces = []
+    for piece in selected_pieces:
+      # changed_hole = fill_piece(
+#           hole,
+#           piece['piece'],
+#           piece['orient'],
+#           piece['coord_pair'],
+#           piece.get('open_edges', None),
+#       )
+#       holes = get_holes(changed_hole)
+#       print('len(holes)', len(holes))
+#       print(holes)
+#       if len(holes) <= 1:
+#         consistent_pieces.append(piece)
+        
+      consistent_pieces.append(piece)
+    
+    consistent_pieces = sorted(consistent_pieces, key=lambda x: x['scores']['total'], reverse=True)
+    highest_scoring_piece = consistent_pieces[0]
+    other_possible_pieces = consistent_pieces[1:4]
     
     # TODO: Don't need all of highest_scoring_piece
     # Maybe also cleanup fill_piece implementation

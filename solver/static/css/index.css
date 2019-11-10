@@ -64,7 +64,14 @@ body {
 .grid-cell.down {
   border-bottom: 2px solid #0f0; }
 
+.move {
+  min-width: 100px; }
+
+.possible-move {
+  min-width: 100px; }
+
 .flex {
-  display: flex; }
+  display: flex;
+  flex-flow: row wrap; }
 
 /*# sourceMappingURL=index.css.map */

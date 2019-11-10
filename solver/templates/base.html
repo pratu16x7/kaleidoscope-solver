@@ -11,7 +11,7 @@
     {% endblock %}
     
   <script>
-    document.getElementById('make-move').addEventListener('click', () => {
+    var makeMove = () => {
       fetch('/get_next_move').then(response => {
         return response.json()
       }).then(move => {
@@ -19,7 +19,23 @@
         d.innerHTML = move.message
         document.getElementById('moves').append(d)
       })
-    })
+    }
+    
+    var isCmdSPressed = function(event) {
+    // only detected via the 'keydown' event
+    return event.keyCode == 83 
+        && (navigator.platform.match("Mac") ? event.metaKey : event.ctrlKey);
+    }
+    
+    document.getElementById('make-move').addEventListener('click', makeMove)
+    document.addEventListener("keydown", function(e) {
+        if (isCmdSPressed(e)) {
+          console.log("Hey!");
+            e.preventDefault();
+            makeMove();
+        }
+    }, false)
+    
   </script>
   </body>
 </html>

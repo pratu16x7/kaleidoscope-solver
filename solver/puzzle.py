@@ -185,7 +185,7 @@ def get_long_windows(patt):
           longest_cts_length_coord = None
       else:
         if not longest_cts_length_coord:
-          longest_cts_length_coord = cell['rel_coord_pair']
+          longest_cts_length_coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
         longest_cts_length += 1
         
     if longest_cts_length >= 4:
@@ -225,7 +225,7 @@ def get_long_windows(patt):
           longest_cts_length_coord = None
       else:
         if not longest_cts_length_coord:
-          longest_cts_length_coord = cell['rel_coord_pair']
+          longest_cts_length_coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
         longest_cts_length += 1
         
     if longest_cts_length >= 4:
@@ -596,21 +596,19 @@ def get_possible_pieces_for_hole(hole):
 # TODO: This can be more efficiently done with the 'no. of islands' approach,
 # right during creating the grid.
 def get_holes(grid):
+  h = len(grid)
+  w = len(grid[0])
+  
   untrav = []
   seen = []
   
-  holes = {
-    # '1': {
-    #   'cells': [],
-    #   'grid': [],
-    #   later 'window_index': {}
-    # }
-  }
+  holes = {}
   
   for row in grid:
     for grid_cell in row:
-      untrav.append(grid_cell['coord'] + grid_cell['color'] + grid_cell['edges'])
-      
+      if grid_cell:
+        untrav.append(grid_cell['coord'] + grid_cell['color'] + grid_cell['edges'])
+        
   curr_hole = ''
   curr_hole_trav = []
   curr_hole_untrav = []
@@ -647,20 +645,18 @@ def get_holes(grid):
       y = int(cell[0])
       x = int(cell[1])
       
-      edges = cell[2:]
+      edges = cell[3:]
       
       for idx, is_edge in enumerate(edges):
         if is_edge == '0':
-          dir_op = DIR_OPS[idx-1]
+          dir_op = DIR_OPS[idx]
           new_y = y + dir_op[0]
           new_x = x + dir_op[1]
           
-          if new_y >= 0 and new_x >= 0 and new_y < CELLS_SIDE and new_x < CELLS_SIDE:
+          if new_y >= 0 and new_x >= 0 and new_y < h and new_x < w:
             # trav it
             grid_cell = grid[new_y][new_x]
             new_cell = grid_cell['coord'] + grid_cell['color'] + grid_cell['edges']
-            
-            
             
             if new_cell not in curr_hole_trav:
               curr_hole_untrav.append(new_cell)
@@ -866,7 +862,7 @@ WINDOW_DIMS = {
 
 
 def get_valid_windows(patt, next_expected_piece_count, small_wand_too):
-  valid_windows = []
+  windows = []
   
   h = len(patt)
   w = len(patt[0])
@@ -879,30 +875,23 @@ def get_valid_windows(patt, next_expected_piece_count, small_wand_too):
     return [['00', [h, w], get_cell_count(patt)]]
   
   cell_grid, edge_count_grid = get_cell_and_edge_count_grids(patt, h, w)
-  hori_cell_2_grads, hori_cell_3_grads = get_hori_cell_gradients(cell_grid, h, w)
   
-  # TODO: justify min_window_cells for this hole general windows
-  
-  # w - WINDOW_DIMS['h'][1] + 1
-  cell_count_window_distribution = {}
-  cell_sums_wide = get_cell_sums_wide(hori_cell_2_grads, cell_count_window_distribution, h, w)
-  cell_sums_long = get_cell_sums_long(hori_cell_3_grads, cell_count_window_distribution, h, w)
-  
-  windows = get_windows_by_cell_count_window_distribution(cell_count_window_distribution)
-
+  if get_cell_count(patt) < 16:
+    windows = get_windows_by_count_grid(cell_grid, h, w)
+  else:
+    windows = get_windows_by_count_grid(edge_count_grid, h, w)
+    
   return windows
   
+def get_windows_by_count_grid(count_grid, h, w):
+  COUNT_CUTOFF = 1
+  count_window_distribution = {}
+  hori_cell_2_grads, hori_cell_3_grads = get_hori_cell_gradients(count_grid, h, w)
+  cell_sums_wide = get_cell_sums_wide(hori_cell_2_grads, count_window_distribution, h, w)
+  cell_sums_long = get_cell_sums_long(hori_cell_3_grads, count_window_distribution, h, w)
 
-  # print(cell_grid)
-  # print(edge_count_grid)
-  # print('')
-  # print(hori_cell_2_grads)
-  # print(hori_cell_3_grads)
-  # print('')
-  # print(cell_sums_wide)
-  # print(cell_sums_long)
-  
-  # return ['34h', '26v']
+  windows = get_windows_by_count_window_distribution(count_window_distribution, COUNT_CUTOFF)
+  return windows
 
 def get_cell_and_edge_count_grids(patt, h, w):
   cell_grid = []
@@ -949,7 +938,7 @@ def get_hori_cell_gradients(cell_grid, h, w):
       
   return hori_cell_2_grads, hori_cell_3_grads
   
-def get_cell_sums_wide(hori_cell_2_grads, cell_count_window_distribution, h, w):
+def get_cell_sums_wide(hori_cell_2_grads, count_window_distribution, h, w):
   cell_sums_wide = []
   
   for i in range(h - WINDOW_DIMS['h'][0] + 1):
@@ -958,11 +947,11 @@ def get_cell_sums_wide(hori_cell_2_grads, cell_count_window_distribution, h, w):
     for j in range(w - WINDOW_DIMS['h'][1] + 1):
       this_sum = hori_cell_2_grads[i][j] + hori_cell_2_grads[i][j+1] + hori_cell_2_grads[i][j+2]
       
-      window = [str(i) + str(j), [2, 3], this_sum]
-      if this_sum not in cell_count_window_distribution:
-        cell_count_window_distribution[this_sum] = [window]
+      window = [str(i) + str(j), WINDOW_DIMS['h'], this_sum]
+      if this_sum not in count_window_distribution:
+        count_window_distribution[this_sum] = [window]
       else:
-        cell_count_window_distribution[this_sum].append(window)
+        count_window_distribution[this_sum].append(window)
         
       grad_wide_sums.append(this_sum)
       
@@ -970,7 +959,7 @@ def get_cell_sums_wide(hori_cell_2_grads, cell_count_window_distribution, h, w):
     
   return cell_sums_wide
   
-def get_cell_sums_long(hori_cell_3_grads, cell_count_window_distribution, h, w):
+def get_cell_sums_long(hori_cell_3_grads, count_window_distribution, h, w):
   cell_sums_long = []
   
   for i in range(h - WINDOW_DIMS['v'][0] + 1):
@@ -979,11 +968,11 @@ def get_cell_sums_long(hori_cell_3_grads, cell_count_window_distribution, h, w):
     for j in range(w - WINDOW_DIMS['v'][1] + 1):
       this_sum = hori_cell_3_grads[i][j] + hori_cell_3_grads[i][j+1]
       
-      window = [str(i) + str(j), [3, 2], this_sum]
-      if this_sum not in cell_count_window_distribution:
-        cell_count_window_distribution[this_sum] = [window]
+      window = [str(i) + str(j), WINDOW_DIMS['v'], this_sum]
+      if this_sum not in count_window_distribution:
+        count_window_distribution[this_sum] = [window]
       else:
-        cell_count_window_distribution[this_sum].append(window)
+        count_window_distribution[this_sum].append(window)
       
       grad_long_sums.append(this_sum)
       
@@ -991,21 +980,20 @@ def get_cell_sums_long(hori_cell_3_grads, cell_count_window_distribution, h, w):
   
   return cell_sums_long
   
-def get_windows_by_cell_count_window_distribution(cell_count_window_distribution):
+def get_windows_by_count_window_distribution(count_window_distribution, count_cutoff):
   windows = []
-  ccwd = cell_count_window_distribution
-  COUNT_CUTOFF = 1
+  cwd = count_window_distribution
   
-  if ccwd:
-    if len(ccwd) == 1:
-      windows = ccwd.values()[0]
+  if cwd:
+    if len(cwd) == 1:
+      windows = cwd.values()[0]
     else:
       # more than two kinds of sizes (counts)
-      sizes = sorted(ccwd.keys(), reverse=True)
-      if len(ccwd[sizes[0]]) > COUNT_CUTOFF:
-        windows = ccwd[sizes[0]]
+      sizes = sorted(cwd.keys(), reverse=True)
+      if len(cwd[sizes[0]]) > count_cutoff:
+        windows = cwd[sizes[0]]
       else:
-        windows = ccwd[sizes[0]] + ccwd[sizes[1]]
+        windows = cwd[sizes[0]] + cwd[sizes[1]]
         
   return windows
   
