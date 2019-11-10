@@ -43,6 +43,8 @@ class Puzzle:
     
   def get_piece(self, name, orient):
     # name, orient = piece_id.split('-')
+    print(name, orient)
+    print(len(self.orients_registry[name]))
     orient = int(orient)
     return self.orients_registry[name][orient]
     
@@ -140,8 +142,9 @@ class Solver:
     # else:
     #   pass
     
-    move = self.get_move()
-    
+    while not move or move == 'retry':
+        move = self.get_move()
+        
     return move
     
   # You mostly can't have a pure 'solve_hole' functionality
@@ -198,6 +201,7 @@ class Solver:
     # TODO: more cases
     elif next_expected_count == 3:
       self.current_progression = [2, 1] + self.current_progression
+      return 'retry'
     else:
       move = None
     
@@ -349,7 +353,7 @@ class Solver:
       
       # only store deduced info, not intermediate info
       window_index[window_id] = {
-        'coord': coord,
+        # 'coord': coord,
         'coord_pair': [y, x],
         'type': window_id[2],  # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
           
@@ -357,16 +361,59 @@ class Solver:
       }
       
     if small_wand_too:
-      hori_windows, vert_windows = get_long_windows(hole)
-      print('hori_windows', hori_windows)
+      hori_postions, vert_postions = get_long_windows(hole)
+      print('hori_postions', hori_postions)
       print('------')
-      print('vert_windows', vert_windows)
+      print('vert_postions', vert_postions)
+      
+      
+      for pos in hori_postions:
+          
+          all_possible_pieces.append({
+             'piece': 'small_wand',
+             'orient': 0 if pos['color'] == 'r' else 2,
+             'coord_pair': pos['coord'],
+             'scores': {
+                 # 'edge': edge_score,
+                 # 'deviation': total_deviation_score,
+                 # 'span': extra_span_score,
+                 # 'total': edge_score + total_deviation_score + extra_span_score
+                 'edge': 1,
+                 'deviation': 1,
+                 'span': 1,
+                 'total': 3
+             },
+             # 'cell_coord_list': piece_cell_list,
+             # 'window_id': window_id,
+             # 'open_edges': open_edges,
+          })
+          
+      for pos in vert_postions:
+          all_possible_pieces.append({
+             'piece': 'small_wand',
+             'orient': 1 if pos['color'] == 'r' else 3,
+             'coord_pair': pos['coord'],
+             'scores': {
+                 # 'edge': edge_score,
+                 # 'deviation': total_deviation_score,
+                 # 'span': extra_span_score,
+                 # 'total': edge_score + total_deviation_score + extra_span_score
+                 'edge': 1,
+                 'deviation': 1,
+                 'span': 1,
+                 'total': 3.1
+             },
+             # 'cell_coord_list': piece_cell_list,
+             # 'window_id': window_id,
+             # 'open_edges': open_edges,
+          })
+          
+      
       
     # TODO: SAVE ALL THE SELECTED BEST CHOICES AT EVERY DECISION STEP
       
       # for win in long_wins:
 #         window_index[window_id] = {
-#           'coord': coord,
 #           'coord_pair': [y, x],
 #           'type': window_id[2],  # hori or vert 3*6, TODO: or long small_wand-ish, helper will get approp coords
 
@@ -385,12 +432,13 @@ class Solver:
     highest_scoring_piece = all_possible_pieces[0]
     other_possible_pieces = all_possible_pieces[1:4]
     
-    selected_window = window_index[highest_scoring_piece['window_id']]
+    # selected_window = window_index[highest_scoring_piece['window_id']]
     
     open_edges = highest_scoring_piece['open_edges']
     # TODO: Don't need all of highest_scoring_piece
     # Maybe also cleanup fill_piece implementation
-    changed_hole = fill_piece(hole, highest_scoring_piece, selected_window['coord_pair'], open_edges)
+    # TODO: remove coord_pair param, or expand piece param into only what's needed
+    changed_hole = fill_piece(hole, highest_scoring_piece, highest_scoring_piece['coord_pair'], open_edges)
       
       
     # Pass on next possible pieces instead of window index. Do we need the index fo r the possible pices?

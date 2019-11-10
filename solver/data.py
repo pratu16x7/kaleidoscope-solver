@@ -22,7 +22,7 @@ PIECES = [
   
   # line (4-0 deviation)
   {
-    'name': 'line4',
+    'name': 'small_wand',
     'val': '00r01x02r03x'
   },
   
@@ -66,7 +66,7 @@ PIECES = [
   
   # Square (4-2-2 deviation)
   {
-    'name': 'small_wand',
+    'name': 'square',
     'val': '00r01x10x11r',
     'positions': 2
   },
