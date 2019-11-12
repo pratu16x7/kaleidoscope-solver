@@ -125,6 +125,7 @@ def get_piece_size_progression(cell_count):
     
   return piece_size_progression
 
+
 def get_piece_to_window_edge_scores(piece, window):
   matched_edges_count = 0
   window_edges_count = 0 
@@ -159,7 +160,7 @@ def get_piece_to_window_edge_scores(piece, window):
 
   return matched_edges_count, window_edges_count, shape_edges_count, piece_open_edges
   
-def get_edge_matches_score(match_count, win_edge_count, piece_edge_count):
+def get_edge_matches_total_score(match_count, win_edge_count, piece_edge_count):
   return round((match_count/win_edge_count)*(match_count/piece_edge_count) * 10, 2)
   
 def get_long_windows(patt):
@@ -595,7 +596,7 @@ def get_possible_pieces_for_hole(hole):
 # TODO: Can be made a bit cleaner, and performant
 # TODO: This can be more efficiently done with the 'no. of islands' approach,
 # right during creating the grid.
-def get_holes(grid):
+def get_holes(grid, rel=False):
   h = len(grid)
   w = len(grid[0])
   
@@ -604,10 +605,18 @@ def get_holes(grid):
   
   holes = {}
   
+  # TODO: Damn ugly! This coord should have stayed the actual. Replace everywhere quickly
+  coord_str = 'coord' if not rel else 'rel_coord'
+  
   for row in grid:
     for grid_cell in row:
       if grid_cell:
-        untrav.append(grid_cell['coord'] + grid_cell['color'] + grid_cell['edges'])
+        
+        # TODO: Damn ugly!
+        if coord_str == 'rel_coord' and coord_str not in grid_cell:
+          coord_str = 'coord'
+          
+        untrav.append(grid_cell[coord_str] + grid_cell['color'] + grid_cell['edges'])
         
   curr_hole = ''
   curr_hole_trav = []
@@ -616,22 +625,7 @@ def get_holes(grid):
   hole_names = [str(i) + 'hole' for i in range(7)]
   
   while untrav or curr_hole_untrav:
-    if not curr_hole_untrav:
-      # new hole, pick a random from untrav
-      if curr_hole:
-        holes[curr_hole] = {
-          'cells': curr_hole_trav
-        }
-      
-      # pick a the first from untrav pass it to new hole's untrav
-      cell = untrav.pop(0)
-      seen.append(cell)
-      
-      curr_hole = hole_names.pop(0)
-      curr_hole_trav = []
-      curr_hole_untrav = [cell]
-      
-    else:
+    if curr_hole_untrav:
       # same hole, pick from its untrav and travel
       # it's already passed on from untrav so don't bother removing from there
       cell = curr_hole_untrav.pop(0)
@@ -656,7 +650,7 @@ def get_holes(grid):
           if new_y >= 0 and new_x >= 0 and new_y < h and new_x < w:
             # trav it
             grid_cell = grid[new_y][new_x]
-            new_cell = grid_cell['coord'] + grid_cell['color'] + grid_cell['edges']
+            new_cell = grid_cell[coord_str] + grid_cell['color'] + grid_cell['edges']
             
             if new_cell not in curr_hole_trav:
               curr_hole_untrav.append(new_cell)
@@ -667,6 +661,21 @@ def get_holes(grid):
               if new_cell not in seen:
                 seen.append(new_cell)
                 untrav.remove(new_cell)
+      
+    else:
+      # new hole, pick a random from untrav
+      if curr_hole:
+        holes[curr_hole] = {
+          'cells': curr_hole_trav
+        }
+      
+      # pick a the first from untrav pass it to new hole's untrav
+      cell = untrav.pop(0)
+      seen.append(cell)
+      
+      curr_hole = hole_names.pop(0)
+      curr_hole_trav = []
+      curr_hole_untrav = [cell]
                 
 
   if curr_hole:
@@ -876,7 +885,7 @@ def get_valid_windows(patt, next_expected_piece_count, small_wand_too):
   
   cell_grid, edge_count_grid = get_cell_and_edge_count_grids(patt, h, w)
   
-  if get_cell_count(patt) < 16:
+  if get_cell_count(patt) < 12:
     windows = get_windows_by_count_grid(cell_grid, h, w)
   else:
     windows = get_windows_by_count_grid(edge_count_grid, h, w)
@@ -984,16 +993,22 @@ def get_windows_by_count_window_distribution(count_window_distribution, count_cu
   windows = []
   cwd = count_window_distribution
   
+  print('========CWD')
+  for key in cwd:
+    print('COUNT', key, cwd[key])
   if cwd:
     if len(cwd) == 1:
       windows = cwd.values()[0]
     else:
       # more than two kinds of sizes (counts)
       sizes = sorted(cwd.keys(), reverse=True)
+      
+      size_cutoff = 3
       if len(cwd[sizes[0]]) > count_cutoff:
-        windows = cwd[sizes[0]]
-      else:
-        windows = cwd[sizes[0]] + cwd[sizes[1]]
+        size_cutoff = 4
+      
+      for size in sizes[:size_cutoff]:
+        windows += cwd[size]
         
   return windows
   

@@ -20,7 +20,7 @@ from puzzle import (
   get_valid_windows, 
   get_long_windows,
   get_piece_to_window_edge_scores, 
-  get_edge_matches_score,
+  get_edge_matches_total_score,
   get_cell_count, 
   DIR_OPS,
   DIR_REVS
@@ -167,6 +167,7 @@ class Solver:
     hole_solution_score = 0
 
     next_expected_count = self.current_progression.pop(0)
+    # TODO: keep refreshing progressions when only a few pieces left
     
     print('hole', self.current_hole_index)
     print('next piece size', next_expected_count)
@@ -355,14 +356,97 @@ class Solver:
     
     for win in windows:
       coord, dim, no_of_cells = win
+      print(coord, dim, no_of_cells)
       y, x = int(coord[0]), int(coord[1])
       h, w = dim
       
       window_id = coord + str(dim[0]) + str(dim[1])
-      window, cell_coord_list = get_window_and_cell_coord_list(hole, y, x, h, w)  
+      
+      window, cell_coord_list = get_window_and_cell_coord_list(hole, y, x, h, w) 
       possible_pieces = get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
       
+      if 'square' in available_pieces:
+        cell_only_coord_list = [cell[:2] for cell in cell_coord_list]
+        print(cell_only_coord_list)
+        if set(['01', '02', '11', '12']).issubset(set(cell_only_coord_list)):
+          print('yes is part 1')
+          cell = window[0][1]
+          # TODO: another rel_coord
+          coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
+          piece = 'square'
+          orient = 0 if cell['color'] == 'r' else 1
+        
+          piece_orient = puzzle.get_piece(piece, orient)
+          new_window = [window[0][1:], window[1][1:]]
+          
+          for row in new_window:
+            for cell in row:
+              cell['rel_coord_pair'][1] -= 1
+              cy, cx = cell['rel_coord_pair'] 
+              cell['rel_coord'] = str(cy) + str(cx)
+          
+          print('NEW_WINDOW', new_window)
+          match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_orient['grid'], new_window)
+          piece_data = {
+             'piece': piece,
+             'orient': orient,
+             'coord_pair': [y, x + 1],
+             'scores': {
+                 'match_c': match_c,
+                 'win_c': win_c,
+                 'piece_c': piece_c,
+                 'deviation': 0,
+                 'span': 0,
+                 'total': get_edge_matches_total_score(match_c, win_c, piece_c)
+             },
+          }
+      
+          possible_pieces += [piece_data]
+        
+        if set(['10', '11', '20', '21']).issubset(set(cell_only_coord_list)):
+          print('yes is part 2')
+          cell = window[1][0]
+          # TODO: another rel_coord
+          coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
+          piece = 'square'
+          orient = 0 if cell['color'] == 'r' else 1
+        
+          piece_orient = puzzle.get_piece(piece, orient)
+          new_window = window[1:]
+          for row in new_window:
+            for cell in row:
+              cell['rel_coord_pair'][0] -= 1
+              cy, cx = cell['rel_coord_pair'] 
+              cell['rel_coord'] = str(cy) + str(cx)
+
+            
+            
+          print('NEW_WINDOW', new_window)
+          match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_orient['grid'], new_window)
+          piece_data = {
+             'piece': piece,
+             'orient': orient,
+             'coord_pair': [y + 1, x],
+             'scores': {
+                 'match_c': match_c,
+                 'win_c': win_c,
+                 'piece_c': piece_c,
+                 'deviation': 0,
+                 'span': 0,
+                 'total': get_edge_matches_total_score(match_c, win_c, piece_c)
+             },
+          }
+        
+          possible_pieces += [piece_data]
+        
+        
+      # also do for square in tall window
+      # also do for monomino: red and black
+      for piece in possible_pieces:
+        print('piece', piece)
       all_possible_pieces += possible_pieces
+      
+    # TODO: You DO need a window index, for meta-analysis
       
     if small_wand_too:
       hori_postions, vert_postions = get_long_windows(hole)
@@ -380,7 +464,7 @@ class Solver:
                  'piece_c': piece_c,
                  'deviation': 0,
                  'span': SPAN_BONUS,
-                 'total': get_edge_matches_score(match_c, win_c, piece_c) + SPAN_BONUS
+                 'total': get_edge_matches_total_score(match_c, win_c, piece_c) + SPAN_BONUS
              },
           })
         
@@ -394,24 +478,21 @@ class Solver:
     # TODO: IMP, Also check if piece breaks the hole
     # In case of a tie, can check which one makes hole less edge-ful (smoother hole is left in ideal situation)
     
-    consistent_pieces = []
-    for piece in selected_pieces:
-      # changed_hole = fill_piece(
-#           hole,
-#           piece['piece'],
-#           piece['orient'],
-#           piece['coord_pair'],
-#           piece.get('open_edges', None),
-#       )
-#       holes = get_holes(changed_hole)
-#       print('len(holes)', len(holes))
-#       print(holes)
-#       if len(holes) <= 1:
-#         consistent_pieces.append(piece)
-        
-      consistent_pieces.append(piece)
+    # consistent_pieces = []
+    # for piece in selected_pieces:
+    #   changed_hole = fill_piece(
+    #       hole,
+    #       piece['piece'],
+    #       piece['orient'],
+    #       piece['coord_pair'],
+    #       piece.get('open_edges', None),
+    #   )
+    #   # TODO: Damn ugly! This coord should have stayed the actual. Replace everywhere quickly
+    #   holes = get_holes(changed_hole, True)
+    #   if len(holes) <= 1:
+    #     consistent_pieces.append(piece)
     
-    consistent_pieces = sorted(consistent_pieces, key=lambda x: x['scores']['total'], reverse=True)
+    consistent_pieces = sorted(selected_pieces, key=lambda x: x['scores']['total'], reverse=True)
     highest_scoring_piece = consistent_pieces[0]
     other_possible_pieces = consistent_pieces[1:4]
     
@@ -491,6 +572,7 @@ def get_window_and_cell_coord_list(hole, y, x, h, w):
     for j in range(x, x + w):
       cell = copy.copy(hole[i][j])
       if cell:
+        # TODO:coord pair by default here too
         if 'rel_coord_pair' in cell:
           cy, cx = cell['rel_coord_pair']
         else:
@@ -564,7 +646,7 @@ def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, n
                'piece_c': piece_c,
                'deviation': total_deviation_score,
                # 'span': extra_span_score,
-               'total': get_edge_matches_score(match_c, win_c, piece_c) + total_deviation_score
+               'total': get_edge_matches_total_score(match_c, win_c, piece_c) + total_deviation_score
              },
              'window_id': window_id,
              'coord_pair': coord_pair,
