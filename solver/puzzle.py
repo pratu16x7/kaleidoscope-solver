@@ -161,7 +161,10 @@ def get_piece_to_window_edge_scores(piece, window):
   return matched_edges_count, window_edges_count, shape_edges_count, piece_open_edges
   
 def get_edge_matches_total_score(match_count, win_edge_count, piece_edge_count):
-  return round((match_count/win_edge_count)*(match_count/piece_edge_count) * 10, 2)
+  # return round((match_count/win_edge_count)*(match_count/piece_edge_count) * 10, 2) + win_edge_count/2
+  # return round((match_count/win_edge_count) * 10, 2) + win_edge_count/2
+  return match_count + win_edge_count/2
+  
   
 def get_long_windows(patt):
   # edge scores first for 4 line

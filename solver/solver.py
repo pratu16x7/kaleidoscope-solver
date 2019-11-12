@@ -395,9 +395,9 @@ class Solver:
                  'match_c': match_c,
                  'win_c': win_c,
                  'piece_c': piece_c,
-                 'deviation': 0,
+                 'deviation': 0.4,
                  'span': 0,
-                 'total': get_edge_matches_total_score(match_c, win_c, piece_c)
+                 'total': get_edge_matches_total_score(match_c, win_c, piece_c) + 0.4
              },
           }
       
@@ -431,9 +431,9 @@ class Solver:
                  'match_c': match_c,
                  'win_c': win_c,
                  'piece_c': piece_c,
-                 'deviation': 0,
+                 'deviation': 0.4,
                  'span': 0,
-                 'total': get_edge_matches_total_score(match_c, win_c, piece_c)
+                 'total': get_edge_matches_total_score(match_c, win_c, piece_c) + 0.4
              },
           }
         
