@@ -6,6 +6,7 @@
 # Goal: to play one puzzle that I know to solve, and all its steps, most determinate, only a few non-determinate
 
 # Rule: only store deduced info, not intermediate info
+# Trye to save all intermediate data as storage as well
 
 
 # Global state (The decision tree level, all knowing, global state)
@@ -90,6 +91,7 @@ class Solver:
     
     # this is only per state
     self.moves = []
+    self.solved = False
     
     # move = {
     #   'piece_name': '',
@@ -135,6 +137,9 @@ class Solver:
     move = {}
     # will have coord, piece, score ... rel_coord, hole_id, type, subtype, other_moves
     
+    if self.solved == True:
+      return
+    
     # TODO: Keep track of hole solution score
     if not self.magic_wand_placed:
       move = self.place_magic_wand()
@@ -149,6 +154,8 @@ class Solver:
     
     while not move or move == 'retry':
         move = self.get_move()
+        if not self.available_pieces:
+          self.solved = True
         
     return move
     
@@ -223,7 +230,16 @@ class Solver:
           self.current_offset = self.current_hole['offset']
           self.current_hole_grid = copy.copy(self.current_hole['grid'])
           
-          self.current_progression = self.progressions.pop(0)
+          if self.holes:
+            self.current_progression = self.progressions.pop(0)
+          else:
+            print(self.available_pieces)
+            self.current_progression = []
+            for piece in self.available_pieces:
+              piece_info = puzzle.get_piece_info(piece)
+              self.current_progression.append(piece_info['size'])
+            self.current_progression = sorted(self.current_progression, reverse=True)
+            print('======self.current_progression', self.current_progression)
         else:
           print('SOLVED!!!')
     
@@ -322,6 +338,7 @@ class Solver:
     
     # place the magic wand and get new hole
     changed_hole = fill_piece(grid, 'magic_wand', orient, position, None)
+    self.available_pieces.remove('magic_wand')
     
     magic_wand_hole['grid'] = changed_hole
     
@@ -356,7 +373,6 @@ class Solver:
     
     for win in windows:
       coord, dim, no_of_cells = win
-      print(coord, dim, no_of_cells)
       y, x = int(coord[0]), int(coord[1])
       h, w = dim
       
@@ -385,7 +401,6 @@ class Solver:
               cy, cx = cell['rel_coord_pair'] 
               cell['rel_coord'] = str(cy) + str(cx)
           
-          print('NEW_WINDOW', new_window)
           match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_orient['grid'], new_window)
           piece_data = {
              'piece': piece,
@@ -419,9 +434,6 @@ class Solver:
               cy, cx = cell['rel_coord_pair'] 
               cell['rel_coord'] = str(cy) + str(cx)
 
-            
-            
-          print('NEW_WINDOW', new_window)
           match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_orient['grid'], new_window)
           piece_data = {
              'piece': piece,
@@ -439,9 +451,8 @@ class Solver:
         
           possible_pieces += [piece_data]
         
-        
-      # also do for square in tall window
-      # also do for monomino: red and black
+      # TODO: also do for monomino: red and black
+      
       for piece in possible_pieces:
         print('piece', piece)
       all_possible_pieces += possible_pieces

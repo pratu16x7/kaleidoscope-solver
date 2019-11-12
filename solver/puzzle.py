@@ -995,23 +995,22 @@ def get_cell_sums_long(hori_cell_3_grads, count_window_distribution, h, w):
 def get_windows_by_count_window_distribution(count_window_distribution, count_cutoff):
   windows = []
   cwd = count_window_distribution
-  
-  print('========CWD')
-  for key in cwd:
-    print('COUNT', key, cwd[key])
+
   if cwd:
     if len(cwd) == 1:
       windows = cwd.values()[0]
     else:
-      # more than two kinds of sizes (counts)
       sizes = sorted(cwd.keys(), reverse=True)
+      
+      # atleast 3 kinds of sizes (counts)
       
       size_cutoff = 3
       if len(cwd[sizes[0]]) > count_cutoff:
         size_cutoff = 4
       
       for size in sizes[:size_cutoff]:
-        windows += cwd[size]
+        if size > 0:
+          windows += cwd[size]
         
   return windows
   

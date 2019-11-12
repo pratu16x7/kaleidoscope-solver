@@ -42,9 +42,16 @@ def home():
 @app.route('/get_next_move')
 def get_next_move():
   move_macro = get_template_attribute('components.html', 'move')
-  move = move_macro(*solver.get_next_move()) 
+  move = solver.get_next_move()
+  if not move:
+    if solver.solved:
+      return {
+        'solved': solver.solved
+      }
+  move_template = move_macro(*move) 
   return {
-    'message': move
+    'message': move_template,
+    'solved': solver.solved
   }
   
 if __name__ == "__main__":
