@@ -87,8 +87,8 @@ def get_pattern_img():
   # img = cv2.imread('./images/45_2.jpg', 0)
   # img = cv2.imread('./images/61_2.jpg', 0)
   # img = cv2.imread('./images/65_2.jpg', 0)
-  # img = cv2.imread('./images/6_1.jpg', 0)
-  img = cv2.imread('./images/18_1.jpg', 0)
+  img = cv2.imread('./images/6_1.jpg', 0)
+  # img = cv2.imread('./images/18_1.jpg', 0)
   img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
 
   h, w = img.shape[:2]

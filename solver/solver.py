@@ -349,7 +349,7 @@ class Solver:
       window, cell_coord_list = get_window_and_cell_coord_list(hole, y, x, h, w) 
       possible_pieces = get_possible_pieces_having_count_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
       
-      if 'square' in available_pieces:
+      if 'square' in available_pieces and next_expected_count == 4:
         cell_only_coord_list = [cell[:2] for cell in cell_coord_list]
         print(cell_only_coord_list)
         if set(['01', '02', '11', '12']).issubset(set(cell_only_coord_list)):
@@ -427,7 +427,7 @@ class Solver:
       
     # TODO: You DO need a window index, for meta-analysis
       
-    if 'small_wand' in available_pieces:
+    if 'small_wand' in available_pieces and next_expected_count == 4:
       hori_postions, vert_postions = get_long_windows(hole)
       
       for pos in hori_postions + vert_postions:
@@ -586,10 +586,10 @@ def get_possible_pieces_having_count_with_scores(available_pieces, window, cell_
   possible_pieces = []
   for name in available_pieces:
     info = puzzle.get_piece_info(name)
-    # next_expected_count for 4-5-6 size windows is always 4 
-    if no_of_cells >= 4:
-       next_expected_count = 4
-    if info['size'] <= no_of_cells and info['size'] >= next_expected_count:
+    # # next_expected_count for 4-5-6 size windows is always 4
+    # if no_of_cells >= 4 and next_expected_count >= 4:
+    #    next_expected_count = 4
+    if info['size'] <= no_of_cells and info['size'] == next_expected_count:
       
       orients = puzzle.get_orients(name)
       
@@ -608,7 +608,7 @@ def get_possible_pieces_having_count_with_scores(available_pieces, window, cell_
            # extra_span = info['max_span'] - TETRA_AVG_SPAN
            # extra_span_score = extra_span * BONUS_SCORE if extra_span > 0 else 0
 
-           DEVIATE_INCR = 0.25
+           DEVIATE_INCR = 0.26
            total_deviation_score = 0
            piece_grid = primary_orient['grid']
            if len(piece_grid) > 1:
