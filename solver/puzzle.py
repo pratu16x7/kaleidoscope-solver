@@ -100,6 +100,12 @@ def get_pieces():
     orients_reg[name] = orients
   return pieces_reg, orients_reg
 
+def get_holes_from_grid(grid):
+    holes_data = get_holes_and_stats(grid)
+    all_holes = holes_data.values()
+    small_holes = [hole for hole in all_holes if hole['size'] <= SMALL_HOLE_SIZE]
+    big_holes = [hole for hole in all_holes if hole['size'] > SMALL_HOLE_SIZE]
+    return sorted(small_holes, key=lambda x: x['size']) + sorted(big_holes, key=lambda x: x['density'])
 
 def get_piece_size_progression(cell_count):
   # Level 1: No. of blocks to get big picture of which available pieces add up to it

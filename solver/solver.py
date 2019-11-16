@@ -15,8 +15,8 @@
 import copy
 from puzzle import (
   get_pieces, 
+  get_holes_from_grid,
   get_piece_size_progression, 
-  get_holes_and_stats, 
   get_holes,
   get_valid_windows, 
   get_long_windows,
@@ -27,6 +27,8 @@ from puzzle import (
   DIR_REVS,
   SMALL_HOLE_SIZE
 )
+
+MAX_MAGIC_WAND_INIT_EDGES = 11
 
 
 
@@ -68,24 +70,12 @@ puzzle = Puzzle()
 
 class Solver:
   def __init__(self, board, pieces):
-    
     self.board = board
-    
-    
     # TODO: You have to make per state copies of these
-    holes_data = get_holes_and_stats(board['grid'])
-    
     # TODO: Maintain a state of percent solved
-    all_holes = holes_data.values()
-    small_holes = [hole for hole in all_holes if hole['size'] <= SMALL_HOLE_SIZE]
-    big_holes = [hole for hole in all_holes if hole['size'] > SMALL_HOLE_SIZE]
-      
-    self.all_holes = sorted(small_holes, key=lambda x: x['size']) + sorted(big_holes, key=lambda x: x['density'])
-    
+    self.all_holes = get_holes_from_grid(board['grid']) 
     self.holes = self.all_holes[:]
     self.progressions = [get_piece_size_progression(hole['size']) for hole in self.holes]
-    
-    print(self.progressions)
     
     # this is only per state
     self.moves = []
@@ -94,31 +84,19 @@ class Solver:
     self.available_pieces = pieces
     self.used_pieces = []
     
-    self.solved_holes = []
-    
     self.current_hole = self.holes.pop(0)
     self.current_hole_index = 0
     self.current_offset = self.current_hole['offset']
     self.current_hole_grid = copy.copy(self.current_hole['grid'])
-    
     self.current_progression = self.progressions.pop(0)
     
     self.magic_wand_placed = False
-    
     self.small_wand_placed = False
     
     # TODO: Trigger warnings, lower scores
     self.domino_used = False
     self.r_monomino_used = False
     self.x_monomino_used = False
-    
-    
-    # this is per hole
-    
-    # go though the holes to see if area <= 4, Those are already solved
-    # go through the holes to see which ones can house magic wand
-    # Now solve smallest hole first
-    # just display the possible pieces on every stez
 
     
   # TODO: will be based on the game state
@@ -270,7 +248,7 @@ class Solver:
           pos = [pos_cell['coord_pair'], 'h', pos_cell['color'], data]
         
           edge_score = sum([cell['edges'].count('1') for cell in row])
-          if edge_score > max_edge_score:
+          if edge_score > max_edge_score and edge_score < MAX_MAGIC_WAND_INIT_EDGES:
             max_edge_score = edge_score
             selected_pos = pos
           
@@ -284,7 +262,7 @@ class Solver:
           pos = [pos_cell['coord_pair'], 'v', pos_cell['color'], data]
 
           edge_score = sum([cell['edges'].count('1') for cell in col])
-          if edge_score > max_edge_score:
+          if edge_score > max_edge_score and edge_score < MAX_MAGIC_WAND_INIT_EDGES:
             max_edge_score = edge_score
             selected_pos = pos
           
@@ -295,6 +273,8 @@ class Solver:
     position = selected_pos[0]
     magic_wand_hole = selected_pos[3]['hole']
     grid = magic_wand_hole['grid']
+    
+    max_edge_score = 0
 
     # select orientation needed by the selected position
     orient_map = {
