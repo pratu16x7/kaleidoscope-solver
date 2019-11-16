@@ -108,7 +108,7 @@ def get_piece_size_progression(cell_count):
   piece_size_progression = []
   
   if cell_count % 4 == 0:
-    piece_size_progression = [4] * (cell_count/4)
+    piece_size_progression = [4] * int(cell_count/4)
   elif cell_count % 2 == 0:
     if cell_count > 2:
       # has a 6 in there, first choice 3 + 3, rather than 4 + 2
@@ -138,6 +138,7 @@ def get_piece_to_window_edge_scores(piece, window):
       for block in row:
           if block:
               window_edges_count += block['edges'].count('1')
+              
               # if len(piece[0]) >= block['coord'][1] + 1:
               # TODO: needs custom rules for how a square 
               # (or a smaller piece than window) 
@@ -873,17 +874,15 @@ WINDOW_DIMS = {
 }
 
 
-def get_valid_windows(patt, next_expected_piece_count, small_wand_too):
+def get_valid_windows(patt, next_expected_piece_count):
   windows = []
   
   h = len(patt)
   w = len(patt[0])
   
-  SMALL_WAND_WIN = False
-  
   # Special case for the square tile, and all the smaller ones?
   # Wait naa, maybe they'll be taken care of anyway. Test and check.
-  if h * w < 6 and not SMALL_WAND_WIN:
+  if h * w <= 6:
     return [['00', [h, w], get_cell_count(patt)]]
   
   cell_grid, edge_count_grid = get_cell_and_edge_count_grids(patt, h, w)
@@ -998,7 +997,7 @@ def get_windows_by_count_window_distribution(count_window_distribution, count_cu
 
   if cwd:
     if len(cwd) == 1:
-      windows = cwd.values()[0]
+      windows = list(cwd.values())[0]
     else:
       sizes = sorted(cwd.keys(), reverse=True)
       

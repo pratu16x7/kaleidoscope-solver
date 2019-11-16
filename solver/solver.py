@@ -49,8 +49,7 @@ class Puzzle:
     
   def get_piece(self, name, orient):
     # name, orient = piece_id.split('-')
-    print(name, orient)
-    print(len(self.orients_registry[name]))
+    # TODO: called twice or many times. Reduce.
     orient = int(orient)
     return self.orients_registry[name][orient]
     
@@ -79,7 +78,7 @@ class Solver:
     # TODO: Order by size, 
     # [testing] keep increasing to eventual full array
     # TODO: Maintain a state of percent solved
-    self.all_holes = [self.holes['2hole'], self.holes['3hole'], self.holes['1hole'], self.holes['0hole']]
+    self.all_holes = self.holes.values()
     
     for hole in self.all_holes:
       hole['size'] = get_cell_count(hole['grid'])
@@ -89,17 +88,11 @@ class Solver:
     self.holes = self.all_holes[:]
     self.progressions = [get_piece_size_progression(hole['size']) for hole in self.holes]
     
+    print(self.progressions)
+    
     # this is only per state
     self.moves = []
     self.solved = False
-    
-    # move = {
-    #   'piece_name': '',
-    #   'piece_orient': '',
-    #   'piece_coord': '',
-    #   'possible_windows': [], # with chars
-    #   'possible_pieces': [], # with chars
-    # }
     
     self.available_pieces = pieces
     self.used_pieces = []
@@ -163,21 +156,18 @@ class Solver:
   # because this game is better solved by considering global contexts
   # You can only ever have a 'get_next_move' base on current circumstances 
   def get_move(self):
-    # TODO: For testing on more cases, remove once done
-    print(self.current_progression)
-    
     # hole offset
     off_y, off_x = self.current_offset
     
     # TODO: Hole piece solve score
     # track the cheat (small) peices used
     hole_solution_score = 0
+    
+    # TODO: For testing on more cases, remove once done
+    print('=======hole, progressions now', self.current_hole_index, self.progressions, self.current_progression)
 
     next_expected_count = self.current_progression.pop(0)
     # TODO: keep refreshing progressions when only a few pieces left
-    
-    print('hole', self.current_hole_index)
-    print('next piece size', next_expected_count)
     
     hole_grid = self.current_hole_grid
     new_hole_grid = None
@@ -233,7 +223,7 @@ class Solver:
           if self.holes:
             self.current_progression = self.progressions.pop(0)
           else:
-            print(self.available_pieces)
+            # for last hole, the progression is the sizes of the pieces left
             self.current_progression = []
             for piece in self.available_pieces:
               piece_info = puzzle.get_piece_info(piece)
@@ -242,27 +232,6 @@ class Solver:
             print('======self.current_progression', self.current_progression)
         else:
           print('SOLVED!!!')
-    
-    # TODO: store away possible others in another dict by move_id
-    # that means move can be an ORDERED DICT
-    # - flex the holes
-    # - don't show pieces
-    
-    # - include scss
-    # - make grid tiny version without numbers
-    
-    # - store possible pieces in separate dict
-    # - store moves in a dict
-    # - flex table entries and possible pieces with their scores
-    
-    # - See the show-off of l-right-r and small wand scores, where L has crookedness, wand has span
-    #   scores should not be much different, just pick one or make the tree now
-    
-    #   You can also favour small wand's other potential position in ANOTHER hole, to show it is closer 
-    #   board border in the other hole. Obscure condition (specific to this case) to break the tie. 
-    #   (And bias in our favour >=<)
-    #   
-    #   All the generic work you're putting in now will help us in our next Pattern that we take up to solve.
     
     # TODO: [bug] in the scoring system! Switch this off and see
     # NEED to round up all highest scorers and see how their scores were calculated and why they lost
@@ -367,8 +336,7 @@ class Solver:
     window_index = {}
     all_possible_pieces = []
     
-    small_wand_too = 'small_wand' in available_pieces
-    windows = get_valid_windows(hole, next_expected_count, small_wand_too) 
+    windows = get_valid_windows(hole, next_expected_count) 
     # Take note of the size of window and available pieces to get the possible window cell count combinations
     
     for win in windows:
@@ -379,7 +347,7 @@ class Solver:
       window_id = coord + str(dim[0]) + str(dim[1])
       
       window, cell_coord_list = get_window_and_cell_coord_list(hole, y, x, h, w) 
-      possible_pieces = get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
+      possible_pieces = get_possible_pieces_having_count_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
       
       if 'square' in available_pieces:
         cell_only_coord_list = [cell[:2] for cell in cell_coord_list]
@@ -459,11 +427,13 @@ class Solver:
       
     # TODO: You DO need a window index, for meta-analysis
       
-    if small_wand_too:
+    if 'small_wand' in available_pieces:
       hori_postions, vert_postions = get_long_windows(hole)
       
       for pos in hori_postions + vert_postions:
           match_c, win_c, piece_c = pos['edge_scores']
+          # NOTE: See the show-off of l-right-r and small wand scores, where L has crookedness, wand has span
+          #   scores should not be much different, just pick one or make the tree now
           SPAN_BONUS = 0.25
           all_possible_pieces.append({
              'piece': 'small_wand',
@@ -484,7 +454,7 @@ class Solver:
     if not all_possible_pieces:
       return
       
-    selected_pieces = sorted(all_possible_pieces, key=lambda x: x['scores']['win_c'], reverse=True)[:6]
+    selected_pieces = sorted(all_possible_pieces, key=lambda x: x['scores']['win_c'] + x['scores']['match_c'], reverse=True)[:6]
     
     # TODO: IMP, Also check if piece breaks the hole
     # In case of a tie, can check which one makes hole less edge-ful (smoother hole is left in ideal situation)
@@ -526,9 +496,20 @@ class Solver:
     # TODO: we need to be able to remove a piece too while backtracking
     # Easier way is to just saving a defined game state at every move, that enables all the other logic to stay constant. The state will probably consist of all the self stuff
     # For now, just pieces and their scores, because that's all we need to see and track
+    # TODO: store away possible others in another dict by move_id
+    # that means move can be an ORDERED DICT
+    
+    # - store possible pieces in separate dict
+    # - store moves in a dict
+    # - flex table entries and possible pieces with their scores
     
     # TODO: another type of score for wand pieces, distance from border, negative if higher distance
     # TODO: Ideally possible pieces scores should be compared across windows :P
+    #   You can favour small wand's other potential position in ANOTHER hole, to show it is closer 
+    #   board border in the other hole. Obscure condition (specific to this case) to break the tie. 
+    #   (And bias in our favour >=<)
+    #   
+    #   All the generic work you're putting in now will help us in our next Pattern that we take up to solve.
 
     hsp = highest_scoring_piece
     
@@ -600,7 +581,7 @@ def get_window_and_cell_coord_list(hole, y, x, h, w):
     
   return window, cell_coord_list 
     
-def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, coord_pair):
+def get_possible_pieces_having_count_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, coord_pair):
   # TODO: if desired 3 not there, 3 = 2 + 1 
   possible_pieces = []
   for name in available_pieces:
@@ -619,6 +600,7 @@ def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, n
         
         if set(piece_cell_list).issubset(cell_coord_list):
            piece_grid = orient['grid']
+           print('====PIECE, coord', name, coord_pair)
            match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
            
            # BONUS_SCORE = 1
@@ -655,7 +637,7 @@ def get_possible_pieces_with_scores(available_pieces, window, cell_coord_list, n
                'match_c': match_c,
                'win_c': win_c,
                'piece_c': piece_c,
-               'deviation': total_deviation_score,
+               'deviation': round(total_deviation_score, 2),
                # 'span': extra_span_score,
                'total': get_edge_matches_total_score(match_c, win_c, piece_c) + total_deviation_score
              },
