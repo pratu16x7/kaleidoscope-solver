@@ -631,7 +631,7 @@ def get_holes(grid, rel=False):
   curr_hole_trav = []
   curr_hole_untrav = []
   
-  hole_names = [str(i) + 'hole' for i in range(7)]
+  hole_names = [str(i) + 'hole' for i in range(18)]
   
   while untrav or curr_hole_untrav:
     if curr_hole_untrav:

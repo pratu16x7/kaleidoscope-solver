@@ -306,8 +306,7 @@ class Solver:
     orient = orient_map[selected_pos[1] + selected_pos[2]]
     
     # place the magic wand and get new hole
-    # changed_hole = fill_piece(grid, 'magic_wand', orient, position, None)
-    changed_hole = fill_piece(grid, 'magic_wand', 2, [0,0], None)
+    changed_hole = fill_piece(grid, 'magic_wand', orient, position, None)
     self.available_pieces.remove('magic_wand')
     
     magic_wand_hole['grid'] = changed_hole
