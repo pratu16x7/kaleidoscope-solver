@@ -248,53 +248,56 @@ class Solver:
     return move
       
   def place_magic_wand(self):
-    magic_wand_hole = None
-    magic_wand_hole_index = None
+    magic_wand_hole_data = []
     
     for idx, hole in enumerate(self.all_holes):
       # if size big, select for magic wand
       if hole['max_span'] == 8:
          # TODO: Multiple holes might have magic wand positions
-         magic_wand_hole = hole
-         magic_wand_hole_index = idx
-         
-    # find valid magic wand positions
-    # valid_positions = []
-    grid = magic_wand_hole['grid']
-    valid_position_windows = {}
+         magic_wand_hole_data.append({
+           'hole': hole,
+           # 'grid': hole['grid'],
+           'idx': idx
+         })
+
+    # valid_position_windows = {}
     
     max_edge_score = 0
     selected_pos = None
-    for row in grid:
-      if None not in row:
-        pos_cell = row[0]
-        s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'h'
-        pos = [pos_cell['coord_pair'], 'h', pos_cell['color'], row]
+    for data in magic_wand_hole_data:
+      grid = data['hole']['grid']
+      for row in grid:
+        if None not in row:
+          pos_cell = row[0]
+          # s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'h'
+          pos = [pos_cell['coord_pair'], 'h', pos_cell['color'], data]
         
-        edge_score = sum([cell['edges'].count('1') for cell in row])
-        if edge_score > max_edge_score:
-          max_edge_score = edge_score
-          selected_pos = pos
+          edge_score = sum([cell['edges'].count('1') for cell in row])
+          if edge_score > max_edge_score:
+            max_edge_score = edge_score
+            selected_pos = pos
           
-        valid_position_windows[s] = pos
+          # valid_position_windows[s] = pos
      
-    for idx in range(len(grid[0])):
-      col = [row[idx] for row in grid]
-      if None not in col:
-        pos_cell = col[0]
-        s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'v'
-        pos = [pos_cell['coord_pair'], 'v', pos_cell['color'], col]
+      for idx in range(len(grid[0])):
+        col = [row[idx] for row in grid]
+        if None not in col:
+          pos_cell = col[0]
+          # s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'v'
+          pos = [pos_cell['coord_pair'], 'v', pos_cell['color'], data]
 
-        edge_score = sum([cell['edges'].count('1') for cell in col])
-        if edge_score > max_edge_score:
-          max_edge_score = edge_score
-          selected_pos = pos
+          edge_score = sum([cell['edges'].count('1') for cell in col])
+          if edge_score > max_edge_score:
+            max_edge_score = edge_score
+            selected_pos = pos
           
-        valid_position_windows[s] = pos
+          # valid_position_windows[s] = pos
+    
        
     # select the best position (non-hole-breaking/most edges count for position, leaving hole least crooked)
-    # selected_pos = list(valid_position_windows.values())[3]
     position = selected_pos[0]
+    magic_wand_hole = selected_pos[3]['hole']
+    grid = magic_wand_hole['grid']
 
     # select orientation needed by the selected position
     orient_map = {
@@ -306,7 +309,8 @@ class Solver:
     orient = orient_map[selected_pos[1] + selected_pos[2]]
     
     # place the magic wand and get new hole
-    changed_hole = fill_piece(grid, 'magic_wand', orient, position, None)
+    # changed_hole = fill_piece(grid, 'magic_wand', orient, position, None)
+    changed_hole = fill_piece(grid, 'magic_wand', 2, [0,0], None)
     self.available_pieces.remove('magic_wand')
     
     magic_wand_hole['grid'] = changed_hole
@@ -315,7 +319,7 @@ class Solver:
         position, 
         'magic_wand', 
         orient, 
-        magic_wand_hole_index,
+        selected_pos[3]['idx'],
         
         {
              'match': max_edge_score,
