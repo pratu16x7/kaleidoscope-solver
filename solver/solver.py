@@ -24,7 +24,8 @@ from puzzle import (
   get_edge_matches_total_score,
   get_cell_count, 
   DIR_OPS,
-  DIR_REVS
+  DIR_REVS,
+  SMALL_HOLE_SIZE
 )
 
 
@@ -72,18 +73,14 @@ class Solver:
     
     
     # TODO: You have to make per state copies of these
-    self.holes = get_holes_and_stats(board['grid'])
+    holes_data = get_holes_and_stats(board['grid'])
     
-    
-    # TODO: Order by size, 
-    # [testing] keep increasing to eventual full array
     # TODO: Maintain a state of percent solved
-    self.all_holes = self.holes.values()
-    
-    for hole in self.all_holes:
-      hole['size'] = get_cell_count(hole['grid'])
+    all_holes = holes_data.values()
+    small_holes = [hole for hole in all_holes if hole['size'] <= SMALL_HOLE_SIZE]
+    big_holes = [hole for hole in all_holes if hole['size'] > SMALL_HOLE_SIZE]
       
-    self.all_holes = sorted(self.all_holes, key=lambda x: x['size'])
+    self.all_holes = sorted(small_holes, key=lambda x: x['size']) + sorted(big_holes, key=lambda x: x['density'])
     
     self.holes = self.all_holes[:]
     self.progressions = [get_piece_size_progression(hole['size']) for hole in self.holes]

@@ -67,6 +67,8 @@ import copy
 DIR_OPS = [[-1,0], [0, -1], [1, 0], [0, 1]]
 DIR_REVS = [2, 3, 0, 1]
 
+SMALL_HOLE_SIZE = 12
+
 
 def get_pieces():
   pieces_reg = {}
@@ -333,18 +335,21 @@ def get_pattern_and_stats(s):
   if not edges_done:
     grid = add_edges_to_grid_data(grid)
   
-  # TODO:
-  # perimeter = 
+  size = len(cells)
+  edge_count = sum([cell['edges'].count('1') for cell in list(cells.values())])
   
-  # deviation_index = 
-  
-  # orientations =
+  # NOTE: concept of density
+  edge_density = round(edge_count/size, 2)
+  density = round(size / (grid_h * grid_w), 2)
   
   return {
     'grid': grid,
     'cell_coord_list': cell_coord_list,
     
-    'size': len(cells),
+    'size': size,
+    'edge_count': edge_count,
+    'edge_density': edge_density,
+    'density': density,
     'dim': [grid_h, grid_w],
     
     'max_span': max(grid_h, grid_w),
@@ -887,7 +892,7 @@ def get_valid_windows(patt, next_expected_piece_count):
   
   cell_grid, edge_count_grid = get_cell_and_edge_count_grids(patt, h, w)
   
-  if get_cell_count(patt) < 12:
+  if get_cell_count(patt) < SMALL_HOLE_SIZE:
     windows = get_windows_by_count_grid(cell_grid, h, w)
   else:
     windows = get_windows_by_count_grid(edge_count_grid, h, w)

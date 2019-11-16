@@ -16,6 +16,7 @@
   <div class="holes flex">
   {% for hole in holes %}
     {{ grid_pattern(hole.grid, 'piece') }}
+    {{ hole.size }} {{ hole.edge_count }} {{ hole.edge_density }} {{ hole.density }}
   {% endfor %}
   </div>
   <p>-------</p>
