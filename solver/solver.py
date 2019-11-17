@@ -160,18 +160,19 @@ class State:
     
     pieces = self.pieces[:]
     pieces.remove(move.piece)
+    
     all_holes = copy.deepcopy(self.holes)
     
-    curr_hole = all_holes[move.hole_id]
     if not get_cell_count(now_filled_hole_grid):
       all_holes.pop(move.hole_id)
       # TODO: change progression if only one hole left
     else:
-      curr_hole['grid'] == now_filled_hole_grid
+      curr_hole = all_holes[move.hole_id]
+      curr_hole['grid'] = now_filled_hole_grid
       # TODO: LATER recalc this as well
       curr_hole['progression'].pop(0)
     
-    print('new_state: pieces', pieces)
+    print('=====Start new_state: pieces', pieces, )
     return State( all_holes, pieces, self ), move
     
   def get_moves(self):
@@ -197,9 +198,10 @@ class State:
   def sort_holes(self):
     # TODO: we'll sort better later
     # TODO: size property is not changed yet when we remove the progression
-    small_holes = [hole for hole in self.holes if hole['size'] <= SMALL_HOLE_SIZE]
-    big_holes = [hole for hole in self.holes if hole['size'] > SMALL_HOLE_SIZE]
-    self.holes = sorted(small_holes, key=lambda x: x['size']) + sorted(big_holes, key=lambda x: x['density'])
+    # small_holes = [hole for hole in self.holes if hole['size'] <= SMALL_HOLE_SIZE]
+#     big_holes = [hole for hole in self.holes if hole['size'] > SMALL_HOLE_SIZE]
+#     self.holes = sorted(small_holes, key=lambda x: x['size']) + sorted(big_holes, key=lambda x: x['density'])
+    pass
     
   def possible_moves_over(self):
     return self.current_move_idx == len(self.possible_moves) - 1
@@ -346,7 +348,7 @@ def get_possible_moves(hole_grid, hole_id, available_pieces, next_expected_count
   if 'small_wand' in available_pieces and next_expected_count == 4:
     all_possible_moves += get_small_wand_moves(hole_grid, hole_id) 
   
-  print('all_possible_moves', all_possible_moves)
+  print('=====all_possible_moves', len(all_possible_moves))
     
   selected_moves = sorted(all_possible_moves, key=lambda x: x.scores['win_c'] + x.scores['match_c'], reverse=True)[:6]
   moves = sorted(selected_moves, key=lambda x: x.scores['total'], reverse=True)

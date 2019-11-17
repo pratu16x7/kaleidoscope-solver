@@ -214,7 +214,6 @@ def get_long_windows(patt):
       # TODO: check if the 5 edge count is because of 2-1-2
       for start in [x, x + longest_cts_length - 4]:
         xi = start
-        print('longest', y, xi)
         edge_count = sum([patt[y][xi + i]['edges'].count('1') for i in range(4)]) 
         
         if edge_count >= 5:
