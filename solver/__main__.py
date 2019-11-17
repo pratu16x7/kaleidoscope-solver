@@ -51,6 +51,8 @@ def get_next_move():
   
   print(move)
       
+      
+  # TODO: macro doesn't take some keys
   move_template = move_macro(**(move.__dict__)) 
   return {
     'message': move_template,

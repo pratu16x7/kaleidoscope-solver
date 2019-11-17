@@ -69,6 +69,8 @@ DIR_REVS = [2, 3, 0, 1]
 
 SMALL_HOLE_SIZE = 12
 
+AVG_WIN_SIZE = 6
+
 
 def get_pieces():
   pieces_reg = {}
@@ -100,12 +102,14 @@ def get_pieces():
     orients_reg[name] = orients
   return pieces_reg, orients_reg
 
-def get_holes_from_grid(grid):
+def get_holes_and_prog_from_grid(grid):
     holes_data = get_holes_and_stats(grid)
     all_holes = holes_data.values()
-    small_holes = [hole for hole in all_holes if hole['size'] <= SMALL_HOLE_SIZE]
-    big_holes = [hole for hole in all_holes if hole['size'] > SMALL_HOLE_SIZE]
-    return sorted(small_holes, key=lambda x: x['size']) + sorted(big_holes, key=lambda x: x['density'])
+    
+    for hole in all_holes:
+      hole['progression'] = get_piece_size_progression(hole['size'])
+    
+    return sorted(list(all_holes), key=lambda x: x['size'])
 
 def get_piece_size_progression(cell_count):
   # Level 1: No. of blocks to get big picture of which available pieces add up to it
@@ -893,7 +897,7 @@ def get_valid_windows(patt, next_expected_piece_count):
   
   # Special case for the square tile, and all the smaller ones?
   # Wait naa, maybe they'll be taken care of anyway. Test and check.
-  if h * w <= 6:
+  if h * w <= AVG_WIN_SIZE:
     return [['00', [h, w], get_cell_count(patt)]]
   
   cell_grid, edge_count_grid = get_cell_and_edge_count_grids(patt, h, w)
