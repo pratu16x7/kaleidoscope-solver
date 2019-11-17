@@ -80,7 +80,7 @@
   </div>
 {%- endmacro %}
 
-{% macro move(coord, piece, orient, hole_id, scores, old_grid, new_grid, possible_moves) -%}
+{% macro move(coord, piece, orient, hole_id, scores, old_grid, new_grid, state) -%}
   <div class="move flex">
     
     {# coord, hole_id are implicitly shown in grid_subtraction hence not printed #}
@@ -88,15 +88,6 @@
     
     {{ piece_pattern(piece, orient) }}
     {{ score_data(scores) }}
-    
-    <div class='flex'>
-      {% for move in possible_moves %}
-          <div class="possible-move">
-            {{ piece_pattern(move.piece, move.orient, True) }}
-            {{ move.coord_pair }} {{ score_data(move.scores) }}
-          </div>
-      {% endfor %}
-    </div>
   </div>
 {%- endmacro %}
 

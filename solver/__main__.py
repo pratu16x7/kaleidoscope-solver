@@ -43,15 +43,18 @@ def home():
 def get_next_move():
   move_macro = get_template_attribute('components.html', 'move')
   move = solver.get_next_move()
-  if not move:
-    if solver.solved:
-      return {
-        'solved': solver.solved
-      }
-  move_template = move_macro(*move) 
+  # if not move:
+  #   if solver.state.solved:
+  #     return {
+  #       'solved': solver.state.solved
+  #     }
+  
+  print(move)
+      
+  move_template = move_macro(**(move.__dict__)) 
   return {
     'message': move_template,
-    'solved': solver.solved
+    'solved': solver.state.solved
   }
   
 if __name__ == "__main__":

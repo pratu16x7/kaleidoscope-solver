@@ -67,9 +67,395 @@ class Puzzle:
 
 puzzle = Puzzle()
 
-
 class Solver:
   def __init__(self, board, pieces):
+    
+    # TODO: place progressions inside holes themselves
+    self.all_holes = get_holes_from_grid(board['grid'])
+    
+    # LATER: and probably also fill in the unquestionables to avoid questioning them in future 
+    self.state = State(
+      # self,
+      copy.deepcopy(self.all_holes), 
+      pieces,
+      None
+    )
+
+  def get_next_move(self):
+    if self.state:
+      state_and_move = self.state.get_new_state()
+      print('stateand_move', state_and_move)
+      if state_and_move:
+        self.state, move = state_and_move
+        return move
+      else:
+        if self.state.failed:
+          self.failed = True
+          return 'Failed'
+        if self.state.solved:
+          # TODO: return proper format required
+          return 'SOLVED!!!'
+          
+    else:
+      # return previous result whatever it was
+      pass
+
+
+# There's multiple Moves for very State
+# A State saves a COPY the ENTIRE BOARD data within itself
+class State:
+  def __init__(self, holes, pieces, parent):
+    self.holes = holes
+    self.pieces = pieces
+    self.curr_hole_idx = 0
+    
+    self.solved = False # will be when you have used up your pieces
+    self.failed = False # will be when your moves are over and you have no parent
+    
+    self.parent = parent
+    
+    # check the hole stats and select a hole
+    # LATER: select multiple holes and do moves
+    
+    # just get, don't play
+    self.possible_moves = self.get_moves()
+    self.current_move_idx = -1
+    
+  def get_new_state(self):
+    # check if solved
+    if not self.pieces:
+      self.solved = True
+      return None
+      
+    # check if failed
+    if self.possible_moves_over():
+      if self.parent:
+        return self.parent
+      else:
+        self.failed = True
+        return None
+    
+    self.current_move_idx += 1
+    move = self.possible_moves[self.current_move_idx]
+    # you will always have this, that how you decided the moves in the first place
+    now_filled_hole_grid = move.get_filled_hole_grid()
+    move.old_grid = self.holes[move.hole_id]['grid']
+    move.new_grid = now_filled_hole_grid
+    
+    new_self = copy.deepcopy(self)
+    new_self.holes[move.hole_id]['grid'] == now_filled_hole_grid
+    new_self.pieces.remove(move.piece)
+
+    return new_self, move   
+    
+  def get_moves(self):
+    # Make move objects. Account for all the special pieces that you have
+    # TODO: LATER: after first board is done, account for all holes
+    
+    if 'magic_wand' in self.pieces:
+      return self.get_magic_wand_moves()
+    
+    moves = [] 
+      
+    return moves
+    
+  def possible_moves_over(self):
+    return self.current_move_idx == len(self.possible_moves) - 1
+    
+  def get_magic_wand_moves(self):
+    magic_wand_hole_data = []
+    
+    for idx, hole in enumerate(self.holes):
+      if hole['max_span'] == 8:
+         magic_wand_hole_data.append({ 'grid': hole['grid'], 'idx': idx })
+         
+    return get_magic_wand_moves_for_holes(magic_wand_hole_data, self)
+
+
+  # def select_next_hole(self):
+  #   # TODO:
+  #   return self.holes[0], 0
+    
+  # def get_magic_wand_hole(self):
+  #   # get_move_for_hole_and_pieces
+  #   # TODO: place magic wand and contruct the first move with only magic wand possible positions
+  #   magic_wand_hole = self.get_magic_wand_hole()
+  #   return self.holes[0]
+
+  # def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):
+  #   # Keep updating hole state and call this window again
+  #   window_index = {}
+  #
+  
+class Move:
+  def __init__(self, hole_id, coord, piece, orient, scores, state):
+    self.hole_id = hole_id
+    self.coord = coord
+    self.piece = piece
+    self.orient = orient
+    
+    self.scores = scores
+    
+    self.state = state
+    
+    self.old_grid = None
+    self.new_grid = None
+    
+  def get_filled_hole_grid(self):
+    now_filled_hole = fill_piece(
+      self.get_hole_grid(),
+      self.piece,
+      self.orient,
+      self.coord,
+      None
+    )
+    
+    return now_filled_hole
+    
+  # def get_piece(self):
+  #   return puzzle.get_piece(self.piece, self.orient)
+    
+  def get_hole_grid(self):
+    return self.state.holes[self.hole_id]['grid']
+
+def get_possible_moves(hole, available_pieces, next_expected_count=4):
+  # Keep updating hole state and call this window again
+  window_index = {}
+  all_possible_pieces = []
+  
+  windows = get_valid_windows(hole, next_expected_count) 
+  # Take note of the size of window and available pieces to get the possible window cell count combinations
+  
+  for win in windows:
+    coord, dim, no_of_cells = win
+    y, x = int(coord[0]), int(coord[1])
+    h, w = dim
+    
+    window_id = coord + str(dim[0]) + str(dim[1])
+    
+    window, cell_coord_list = get_window_and_cell_coord_list(hole, y, x, h, w) 
+    possible_pieces = get_possible_pieces_having_count_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
+    
+    if 'square' in available_pieces and next_expected_count == 4:
+      cell_only_coord_list = [cell[:2] for cell in cell_coord_list]
+      print(cell_only_coord_list)
+      if set(['01', '02', '11', '12']).issubset(set(cell_only_coord_list)):
+        print('yes is part 1')
+        cell = window[0][1]
+        # TODO: another rel_coord
+        coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
+        piece = 'square'
+        orient = 0 if cell['color'] == 'r' else 1
+      
+        piece_orient = puzzle.get_piece(piece, orient)
+        new_window = [window[0][1:], window[1][1:]]
+        
+        for row in new_window:
+          for cell in row:
+            cell['rel_coord_pair'][1] -= 1
+            cy, cx = cell['rel_coord_pair'] 
+            cell['rel_coord'] = str(cy) + str(cx)
+        
+        match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_orient['grid'], new_window)
+        piece_data = {
+           'piece': piece,
+           'orient': orient,
+           'coord_pair': [y, x + 1],
+           'scores': {
+               'match_c': match_c,
+               'win_c': win_c,
+               'piece_c': piece_c,
+               'deviation': 0.4,
+               'span': 0,
+               'total': get_edge_matches_total_score(match_c, win_c, piece_c) + 0.4
+           },
+        }
+    
+        possible_pieces += [piece_data]
+      
+      if set(['10', '11', '20', '21']).issubset(set(cell_only_coord_list)):
+        print('yes is part 2')
+        cell = window[1][0]
+        # TODO: another rel_coord
+        coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
+        piece = 'square'
+        orient = 0 if cell['color'] == 'r' else 1
+      
+        piece_orient = puzzle.get_piece(piece, orient)
+        new_window = window[1:]
+        for row in new_window:
+          for cell in row:
+            cell['rel_coord_pair'][0] -= 1
+            cy, cx = cell['rel_coord_pair'] 
+            cell['rel_coord'] = str(cy) + str(cx)
+
+        match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_orient['grid'], new_window)
+        piece_data = {
+           'piece': piece,
+           'orient': orient,
+           'coord_pair': [y + 1, x],
+           'scores': {
+               'match_c': match_c,
+               'win_c': win_c,
+               'piece_c': piece_c,
+               'deviation': 0.4,
+               'span': 0,
+               'total': get_edge_matches_total_score(match_c, win_c, piece_c) + 0.4
+           },
+        }
+      
+        possible_pieces += [piece_data]
+      
+    # TODO: also do for monomino: red and black
+    
+    for piece in possible_pieces:
+      print('piece', piece)
+    all_possible_pieces += possible_pieces
+    
+  # TODO: You DO need a window index, for meta-analysis
+    
+  if 'small_wand' in available_pieces and next_expected_count == 4:
+    hori_postions, vert_postions = get_long_windows(hole)
+    
+    for pos in hori_postions + vert_postions:
+        match_c, win_c, piece_c = pos['edge_scores']
+        # NOTE: See the show-off of l-right-r and small wand scores, where L has crookedness, wand has span
+        #   scores should not be much different, just pick one or make the tree now
+        SPAN_BONUS = 0.25
+        all_possible_pieces.append({
+           'piece': 'small_wand',
+           'orient': pos['orient'],
+           'coord_pair': pos['coord'],
+           'scores': {
+               'match_c': match_c,
+               'win_c': win_c,
+               'piece_c': piece_c,
+               'deviation': 0,
+               'span': SPAN_BONUS,
+               'total': get_edge_matches_total_score(match_c, win_c, piece_c) + SPAN_BONUS
+           },
+        })
+      
+  # TODO: More graceful failing, for handling in the caller
+  # print(windows)
+  if not all_possible_pieces:
+    return
+    
+  selected_pieces = sorted(all_possible_pieces, key=lambda x: x['scores']['win_c'] + x['scores']['match_c'], reverse=True)[:6]
+  
+  # TODO: IMP, Also check if piece breaks the hole
+  # In case of a tie, can check which one makes hole less edge-ful (smoother hole is left in ideal situation)
+  
+  # consistent_pieces = []
+  # for piece in selected_pieces:
+  #   changed_hole = fill_piece(
+  #       hole,
+  #       piece['piece'],
+  #       piece['orient'],
+  #       piece['coord_pair'],
+  #       piece.get('open_edges', None),
+  #   )
+  #   # TODO: Damn ugly! This coord should have stayed the actual. Replace everywhere quickly
+  #   holes = get_holes(changed_hole, True)
+  #   if len(holes) <= 1:
+  #     consistent_pieces.append(piece)
+  
+  consistent_pieces = sorted(selected_pieces, key=lambda x: x['scores']['total'], reverse=True)
+  highest_scoring_piece = consistent_pieces[0]
+  other_possible_pieces = consistent_pieces[1:4]
+  
+  # TODO: Don't need all of highest_scoring_piece
+  # Maybe also cleanup fill_piece implementation
+  # TODO: remove coord_pair param, or expand piece param into only what's needed
+  
+  changed_hole = fill_piece(
+      hole, 
+      highest_scoring_piece['piece'], 
+      highest_scoring_piece['orient'], 
+      highest_scoring_piece['coord_pair'],  
+      highest_scoring_piece.get('open_edges', None),
+  )
+    
+    
+  # Pass on next possible pieces instead of window index. Do we need the index fo r the possible pices?
+  # We needed for this piece to fill it, have to store the index some where and keep
+  # or simply store the window along with each possible instead of the entire index
+  # TODO: we need to be able to remove a piece too while backtracking
+  # Easier way is to just saving a defined game state at every move, that enables all the other logic to stay constant. The state will probably consist of all the self stuff
+  # For now, just pieces and their scores, because that's all we need to see and track
+  # TODO: store away possible others in another dict by move_id
+  # that means move can be an ORDERED DICT
+  
+  # - store possible pieces in separate dict
+  # - store moves in a dict
+  # - flex table entries and possible pieces with their scores
+  
+  # TODO: another type of score for wand pieces, distance from border, negative if higher distance
+  # TODO: Ideally possible pieces scores should be compared across windows :P
+  #   You can favour small wand's other potential position in ANOTHER hole, to show it is closer 
+  #   board border in the other hole. Obscure condition (specific to this case) to break the tie. 
+  #   (And bias in our favour >=<)
+  #   
+  #   All the generic work you're putting in now will help us in our next Pattern that we take up to solve.
+
+  hsp = highest_scoring_piece
+  
+  return hsp['piece'], hsp['orient'], hsp['coord_pair'], hsp['scores'], changed_hole, other_possible_pieces
+
+def get_magic_wand_moves_for_holes(magic_wand_hole_data, state):  
+  valid_moves = []
+  
+  orient_map = {
+    'hr': 0,
+    'vr': 1,
+    'hx': 2,
+    'vx': 3
+  }
+  
+  def get_scores(max_edge_score):
+    return {
+         'match': max_edge_score,
+         # 'm_w': m_w,
+         # 'm_p': m_p,
+         'deviation': 0,
+         # 'span': span,
+         'total': max_edge_score
+    }
+    
+  def append_move(hole_idx, cell_col, direction):
+    cell = cell_col[0]
+    orient = orient_map[direction + cell['color']]
+    max_edge_score = sum([c['edges'].count('1') for c in cell_col])
+    move = Move(hole_idx, cell['coord_pair'], 'magic_wand', orient, get_scores(max_edge_score), state)
+    valid_moves.append(move)
+  
+  for data in magic_wand_hole_data:
+    grid = data['grid']
+    for row in grid:
+      if None not in row:
+        append_move(data['idx'], row, 'h')
+
+    for idx in range(len(grid[0])):
+      col = [row[idx] for row in grid]
+      if None not in col:
+        append_move(data['idx'], col, 'v')
+        
+  return valid_moves
+      
+    
+
+
+
+# ==========================================
+
+
+class Solver2:
+  def __init__(self, board, pieces):
+    
+    
+    self.move = Move(board, pieces)
+    
+    
     self.board = board
     # TODO: You have to make per state copies of these
     # TODO: Maintain a state of percent solved
@@ -221,279 +607,8 @@ class Solver:
     # ... then, to be continued
     
     return move
-      
-  def place_magic_wand(self):
-    magic_wand_hole_data = []
-    
-    for idx, hole in enumerate(self.all_holes):
-      # if size big, select for magic wand
-      if hole['max_span'] == 8:
-         # TODO: Multiple holes might have magic wand positions
-         magic_wand_hole_data.append({
-           'hole': hole,
-           # 'grid': hole['grid'],
-           'idx': idx
-         })
 
-    # valid_position_windows = {}
-    
-    max_edge_score = 0
-    selected_pos = None
-    for data in magic_wand_hole_data:
-      grid = data['hole']['grid']
-      for row in grid:
-        if None not in row:
-          pos_cell = row[0]
-          # s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'h'
-          pos = [pos_cell['coord_pair'], 'h', pos_cell['color'], data]
-        
-          edge_score = sum([cell['edges'].count('1') for cell in row])
-          if edge_score > max_edge_score and edge_score < MAX_MAGIC_WAND_INIT_EDGES:
-            max_edge_score = edge_score
-            selected_pos = pos
-          
-          # valid_position_windows[s] = pos
-     
-      for idx in range(len(grid[0])):
-        col = [row[idx] for row in grid]
-        if None not in col:
-          pos_cell = col[0]
-          # s = str(pos_cell['coord'][0]) + str(pos_cell['coord'][1]) + 'v'
-          pos = [pos_cell['coord_pair'], 'v', pos_cell['color'], data]
-
-          edge_score = sum([cell['edges'].count('1') for cell in col])
-          if edge_score > max_edge_score and edge_score < MAX_MAGIC_WAND_INIT_EDGES:
-            max_edge_score = edge_score
-            selected_pos = pos
-          
-          # valid_position_windows[s] = pos
-    
-       
-    # select the best position (non-hole-breaking/most edges count for position, leaving hole least crooked)
-    position = selected_pos[0]
-    magic_wand_hole = selected_pos[3]['hole']
-    grid = magic_wand_hole['grid']
-    
-    max_edge_score = 0
-
-    # select orientation needed by the selected position
-    orient_map = {
-      'hr': 0,
-      'vr': 1,
-      'hx': 2,
-      'vx': 3
-    }
-    orient = orient_map[selected_pos[1] + selected_pos[2]]
-    
-    # place the magic wand and get new hole
-    changed_hole = fill_piece(grid, 'magic_wand', orient, position, None)
-    self.available_pieces.remove('magic_wand')
-    
-    magic_wand_hole['grid'] = changed_hole
-    
-    return [
-        position, 
-        'magic_wand', 
-        orient, 
-        selected_pos[3]['idx'],
-        
-        {
-             'match': max_edge_score,
-             # 'm_w': m_w,
-             # 'm_p': m_p,
-             'deviation': 0,
-             # 'span': span,
-             'total': max_edge_score
-        }, 
-        grid, 
-        changed_hole, 
-        [ ]
-    ]
-    
-    
-  def get_best_hole_move(self, hole, available_pieces, next_expected_count=4):
-    # Keep updating hole state and call this window again
-    window_index = {}
-    all_possible_pieces = []
-    
-    windows = get_valid_windows(hole, next_expected_count) 
-    # Take note of the size of window and available pieces to get the possible window cell count combinations
-    
-    for win in windows:
-      coord, dim, no_of_cells = win
-      y, x = int(coord[0]), int(coord[1])
-      h, w = dim
-      
-      window_id = coord + str(dim[0]) + str(dim[1])
-      
-      window, cell_coord_list = get_window_and_cell_coord_list(hole, y, x, h, w) 
-      possible_pieces = get_possible_pieces_having_count_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, window_id, [y, x])
-      
-      if 'square' in available_pieces and next_expected_count == 4:
-        cell_only_coord_list = [cell[:2] for cell in cell_coord_list]
-        print(cell_only_coord_list)
-        if set(['01', '02', '11', '12']).issubset(set(cell_only_coord_list)):
-          print('yes is part 1')
-          cell = window[0][1]
-          # TODO: another rel_coord
-          coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
-          piece = 'square'
-          orient = 0 if cell['color'] == 'r' else 1
-        
-          piece_orient = puzzle.get_piece(piece, orient)
-          new_window = [window[0][1:], window[1][1:]]
-          
-          for row in new_window:
-            for cell in row:
-              cell['rel_coord_pair'][1] -= 1
-              cy, cx = cell['rel_coord_pair'] 
-              cell['rel_coord'] = str(cy) + str(cx)
-          
-          match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_orient['grid'], new_window)
-          piece_data = {
-             'piece': piece,
-             'orient': orient,
-             'coord_pair': [y, x + 1],
-             'scores': {
-                 'match_c': match_c,
-                 'win_c': win_c,
-                 'piece_c': piece_c,
-                 'deviation': 0.4,
-                 'span': 0,
-                 'total': get_edge_matches_total_score(match_c, win_c, piece_c) + 0.4
-             },
-          }
-      
-          possible_pieces += [piece_data]
-        
-        if set(['10', '11', '20', '21']).issubset(set(cell_only_coord_list)):
-          print('yes is part 2')
-          cell = window[1][0]
-          # TODO: another rel_coord
-          coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
-          piece = 'square'
-          orient = 0 if cell['color'] == 'r' else 1
-        
-          piece_orient = puzzle.get_piece(piece, orient)
-          new_window = window[1:]
-          for row in new_window:
-            for cell in row:
-              cell['rel_coord_pair'][0] -= 1
-              cy, cx = cell['rel_coord_pair'] 
-              cell['rel_coord'] = str(cy) + str(cx)
-
-          match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_orient['grid'], new_window)
-          piece_data = {
-             'piece': piece,
-             'orient': orient,
-             'coord_pair': [y + 1, x],
-             'scores': {
-                 'match_c': match_c,
-                 'win_c': win_c,
-                 'piece_c': piece_c,
-                 'deviation': 0.4,
-                 'span': 0,
-                 'total': get_edge_matches_total_score(match_c, win_c, piece_c) + 0.4
-             },
-          }
-        
-          possible_pieces += [piece_data]
-        
-      # TODO: also do for monomino: red and black
-      
-      for piece in possible_pieces:
-        print('piece', piece)
-      all_possible_pieces += possible_pieces
-      
-    # TODO: You DO need a window index, for meta-analysis
-      
-    if 'small_wand' in available_pieces and next_expected_count == 4:
-      hori_postions, vert_postions = get_long_windows(hole)
-      
-      for pos in hori_postions + vert_postions:
-          match_c, win_c, piece_c = pos['edge_scores']
-          # NOTE: See the show-off of l-right-r and small wand scores, where L has crookedness, wand has span
-          #   scores should not be much different, just pick one or make the tree now
-          SPAN_BONUS = 0.25
-          all_possible_pieces.append({
-             'piece': 'small_wand',
-             'orient': pos['orient'],
-             'coord_pair': pos['coord'],
-             'scores': {
-                 'match_c': match_c,
-                 'win_c': win_c,
-                 'piece_c': piece_c,
-                 'deviation': 0,
-                 'span': SPAN_BONUS,
-                 'total': get_edge_matches_total_score(match_c, win_c, piece_c) + SPAN_BONUS
-             },
-          })
-        
-    # TODO: More graceful failing, for handling in the caller
-    # print(windows)
-    if not all_possible_pieces:
-      return
-      
-    selected_pieces = sorted(all_possible_pieces, key=lambda x: x['scores']['win_c'] + x['scores']['match_c'], reverse=True)[:6]
-    
-    # TODO: IMP, Also check if piece breaks the hole
-    # In case of a tie, can check which one makes hole less edge-ful (smoother hole is left in ideal situation)
-    
-    # consistent_pieces = []
-    # for piece in selected_pieces:
-    #   changed_hole = fill_piece(
-    #       hole,
-    #       piece['piece'],
-    #       piece['orient'],
-    #       piece['coord_pair'],
-    #       piece.get('open_edges', None),
-    #   )
-    #   # TODO: Damn ugly! This coord should have stayed the actual. Replace everywhere quickly
-    #   holes = get_holes(changed_hole, True)
-    #   if len(holes) <= 1:
-    #     consistent_pieces.append(piece)
-    
-    consistent_pieces = sorted(selected_pieces, key=lambda x: x['scores']['total'], reverse=True)
-    highest_scoring_piece = consistent_pieces[0]
-    other_possible_pieces = consistent_pieces[1:4]
-    
-    # TODO: Don't need all of highest_scoring_piece
-    # Maybe also cleanup fill_piece implementation
-    # TODO: remove coord_pair param, or expand piece param into only what's needed
-    
-    changed_hole = fill_piece(
-        hole, 
-        highest_scoring_piece['piece'], 
-        highest_scoring_piece['orient'], 
-        highest_scoring_piece['coord_pair'],  
-        highest_scoring_piece.get('open_edges', None),
-    )
-      
-      
-    # Pass on next possible pieces instead of window index. Do we need the index fo r the possible pices?
-    # We needed for this piece to fill it, have to store the index some where and keep
-    # or simply store the window along with each possible instead of the entire index
-    # TODO: we need to be able to remove a piece too while backtracking
-    # Easier way is to just saving a defined game state at every move, that enables all the other logic to stay constant. The state will probably consist of all the self stuff
-    # For now, just pieces and their scores, because that's all we need to see and track
-    # TODO: store away possible others in another dict by move_id
-    # that means move can be an ORDERED DICT
-    
-    # - store possible pieces in separate dict
-    # - store moves in a dict
-    # - flex table entries and possible pieces with their scores
-    
-    # TODO: another type of score for wand pieces, distance from border, negative if higher distance
-    # TODO: Ideally possible pieces scores should be compared across windows :P
-    #   You can favour small wand's other potential position in ANOTHER hole, to show it is closer 
-    #   board border in the other hole. Obscure condition (specific to this case) to break the tie. 
-    #   (And bias in our favour >=<)
-    #   
-    #   All the generic work you're putting in now will help us in our next Pattern that we take up to solve.
-
-    hsp = highest_scoring_piece
-    
-    return hsp['piece'], hsp['orient'], hsp['coord_pair'], hsp['scores'], changed_hole, other_possible_pieces
+  
     
 
 
