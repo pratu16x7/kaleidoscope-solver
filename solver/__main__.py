@@ -43,14 +43,12 @@ def home():
 def get_next_move():
   move_macro = get_template_attribute('components.html', 'move')
   move = solver.get_next_move()
-  # if not move:
-  #   if solver.state.solved:
-  #     return {
-  #       'solved': solver.state.solved
-  #     }
+  if type(move) == str:
+    return {
+      'state': move
+    }
   
   print(move)
-      
       
   # TODO: macro doesn't take some keys
   move_template = move_macro(**(move.__dict__)) 

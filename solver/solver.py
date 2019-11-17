@@ -95,19 +95,23 @@ class Solver:
 
   def get_next_move(self):
     if self.state:
-      state_and_move = self.state.get_new_state()
-      print('stateand_move', state_and_move)
-      if state_and_move:
+      data = self.state.get_new_state()
+      print('stateand_move', data)
+      if data:
         # TODO: Acknowledge for backtrack step, same proper format as solved ans failed
-        self.state, move = state_and_move
-        return move
+        if len(data) == 2:
+          self.state, move = data
+          return move
+        else:
+          self.state = data[0]
+          return 'backtrack'
       else:
         if self.state.failed:
           self.failed = True
-          return 'Failed'
+          return 'failed'
         if self.state.solved:
           # TODO: return proper format required
-          return 'SOLVED!!!'
+          return 'solved'
           
     else:
       # return previous result whatever it was
@@ -146,7 +150,7 @@ class State:
         # TODO: reclaim space
         
         print('==== parent')
-        return self.parent
+        return [self.parent]
       else:
         self.failed = True
         return None
@@ -166,6 +170,8 @@ class State:
     if not get_cell_count(now_filled_hole_grid):
       all_holes.pop(move.hole_id)
       # TODO: change progression if only one hole left
+      if len(all_holes) == 1:
+        all_holes[0]['progression'] = get_pieces_progression(pieces)
     else:
       curr_hole = all_holes[move.hole_id]
       curr_hole['grid'] = now_filled_hole_grid
@@ -173,7 +179,7 @@ class State:
       curr_hole['progression'].pop(0)
     
     print('=====Start new_state: pieces', pieces, )
-    return State( all_holes, pieces, self ), move
+    return [State( all_holes, pieces, self ), move]
     
   def get_moves(self):
     # Make move objects. Account for all the special pieces that you have
@@ -190,6 +196,13 @@ class State:
     hole = self.holes[0]
     next_count = hole['progression'][0]
     moves = get_possible_moves(hole['grid'], 0, self.pieces, next_count)
+    
+    if not moves and next_count == 3:
+      hole['progression'].pop(0)
+      hole['progression'] = [2, 1] + hole['progression']
+      next_count = hole['progression'][0]
+      moves = get_possible_moves(hole['grid'], 0, self.pieces, next_count)
+    
     for move in moves:
       move.state = self
     
@@ -263,6 +276,8 @@ class Move:
     
   def get_hole_grid(self):
     return self.state.holes[self.hole_id]['grid']
+
+
 
 def get_possible_moves(hole_grid, hole_id, available_pieces, next_expected_count=4):
   all_possible_moves = []
@@ -353,7 +368,7 @@ def get_possible_moves(hole_grid, hole_id, available_pieces, next_expected_count
   selected_moves = sorted(all_possible_moves, key=lambda x: x.scores['win_c'] + x.scores['match_c'], reverse=True)[:6]
   moves = sorted(selected_moves, key=lambda x: x.scores['total'], reverse=True)
   
-  return moves[:4]
+  return moves[:2]
   
 
   
@@ -533,6 +548,13 @@ def get_possible_moves_having_count_with_scores(available_pieces, window, cell_c
            possible_moves.append(move)
            
   return possible_moves
+  
+def get_pieces_progression(pieces):
+  progression = []
+  for piece in pieces:
+    piece_info = puzzle.get_piece_info(piece)
+    progression.append(piece_info['size'])
+  return progression
 
 def get_total_deviation_score(piece_grid):
   DEVIATE_INCR = 0.26
@@ -556,173 +578,3 @@ def get_total_deviation_score(piece_grid):
               total_deviation_score += 1 * DEVIATE_INCR
               
   return total_deviation_score
-
-
-# ==========================================
-
-
-class Solver2:
-  def __init__(self, board, pieces):
-    
-    
-    self.move = Move(board, pieces)
-    
-    
-    self.board = board
-    # TODO: You have to make per state copies of these
-    # TODO: Maintain a state of percent solved
-    self.all_holes = get_holes_from_grid(board['grid']) 
-    self.holes = self.all_holes[:]
-    self.progressions = [get_piece_size_progression(hole['size']) for hole in self.holes]
-    
-    # this is only per state
-    self.moves = []
-    self.solved = False
-    
-    self.available_pieces = pieces
-    self.used_pieces = []
-    
-    self.current_hole = self.holes.pop(0)
-    self.current_hole_index = 0
-    self.current_offset = self.current_hole['offset']
-    self.current_hole_grid = copy.copy(self.current_hole['grid'])
-    self.current_progression = self.progressions.pop(0)
-    
-    self.magic_wand_placed = False
-    self.small_wand_placed = False
-    
-    # TODO: Trigger warnings, lower scores
-    self.domino_used = False
-    self.r_monomino_used = False
-    self.x_monomino_used = False
-
-    
-  # TODO: will be based on the game state
-  # will initially not support backtracking 
-  def get_next_move(self):
-    move = {}
-    # will have coord, piece, score ... rel_coord, hole_id, type, subtype, other_moves
-    
-    if self.solved == True:
-      return
-    
-    # TODO: Keep track of hole solution score
-    if not self.magic_wand_placed:
-      move = self.place_magic_wand()
-      if move:
-        self.magic_wand_placed = True
-        return move 
-      
-    # if not self.small_wand_placed:
-    #   move =
-    # else:
-    #   pass
-    
-    while not move or move == 'retry':
-        move = self.get_move()
-        if not self.available_pieces:
-          self.solved = True
-        
-    return move
-    
-  # You mostly can't have a pure 'solve_hole' functionality
-  # because this game is better solved by considering global contexts
-  # You can only ever have a 'get_next_move' base on current circumstances 
-  def get_move(self):
-    # hole offset
-    off_y, off_x = self.current_offset
-    
-    # TODO: Hole piece solve score
-    # track the cheat (small) peices used
-    hole_solution_score = 0
-    
-    # TODO: For testing on more cases, remove once done
-    print('=======hole, progressions now', self.current_hole_index, self.progressions, self.current_progression)
-
-    next_expected_count = self.current_progression.pop(0)
-    # TODO: keep refreshing progressions when only a few pieces left
-    
-    hole_grid = self.current_hole_grid
-    new_hole_grid = None
-    
-    sol = self.get_best_hole_move(
-      hole_grid, 
-      self.available_pieces, 
-      next_expected_count
-    )
-    
-    if sol:
-      piece, orient, coord_pair, scores, new_hole_grid, other_possible_moves = sol
-    
-      self.available_pieces.remove(piece)
-      self.used_pieces.append(piece)
-    
-      # hole_rel_window_pos
-      p_y, p_x = coord_pair
-      pos = [off_y + p_y, off_x + p_x]
-      
-      move = [
-          pos, 
-          piece, 
-          orient, 
-          self.current_hole_index, 
-          
-          scores, 
-          hole_grid, 
-          new_hole_grid, 
-          other_possible_moves
-      ]
-      self.moves.append(move)
-      
-    # TODO: more cases
-    elif next_expected_count == 3:
-      self.current_progression = [2, 1] + self.current_progression
-      return 'retry'
-    else:
-      move = None
-    
-    now_hole_grid = new_hole_grid or hole_grid
-    
-    # TODO: [bug] Temp Red Monomino move has trouble, place small_wand in first big hole and check
-    remaining_count = get_cell_count(new_hole_grid)
-    print('remaining_count', remaining_count)
-    if not remaining_count:
-        if self.holes:
-          self.current_hole = self.holes.pop(0)
-          self.current_hole_index += 1
-          self.current_offset = self.current_hole['offset']
-          self.current_hole_grid = copy.copy(self.current_hole['grid'])
-          
-          if self.holes:
-            self.current_progression = self.progressions.pop(0)
-          else:
-            # for last hole, the progression is the sizes of the pieces left
-            self.current_progression = []
-            for piece in self.available_pieces:
-              piece_info = puzzle.get_piece_info(piece)
-              self.current_progression.append(piece_info['size'])
-            self.current_progression = sorted(self.current_progression, reverse=True)
-            print('======self.current_progression', self.current_progression)
-        else:
-          print('SOLVED!!!')
-    
-    # TODO: [bug] in the scoring system! Switch this off and see
-    # NEED to round up all highest scorers and see how their scores were calculated and why they lost
-    else:
-      self.current_hole_grid = new_hole_grid
-          
-    # Next up, 3 = 2+1 flow/bug
-    # better move template
-    # then, include the small_wand in the scoring system too
-    # make small_wand lose
-    # include the big hole in the solving
-    # ... then, to be continued
-    
-    return move
-
-  
-    
-
-
-
-  

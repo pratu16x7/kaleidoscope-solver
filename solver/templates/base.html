@@ -16,8 +16,8 @@
         return response.json()
       }).then(move => {
         const d = document.createElement('div')
-        if (!move.message && move.solved) {
-          d.innerHTML = 'SOLVED!!!'
+        if (!move.message && move.state) {
+          d.innerHTML = move.state + '!'
           document.getElementById('moves').append(d)
         } else {
           d.innerHTML = move.message
