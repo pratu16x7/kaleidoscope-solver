@@ -20,15 +20,15 @@ from puzzle import get_board_from_img
 
 app = Flask(__name__)
 
-puzzle = Puzzle()
-app.jinja_env.globals.update(get_piece=puzzle.get_piece)
-
 pattern_img = get_pattern_img()
 # TODO: get only the string of the board from img,
 # do everything else via the solver
 board = get_board_from_img(pattern_img, get_black_thresh())
-pieces = list(puzzle.get_pieces())
 
+puzzle = Puzzle(board['red_count'], board['black_count'])
+app.jinja_env.globals.update(get_piece=puzzle.get_piece)
+
+pieces = list(puzzle.get_pieces())
 solver = Solver(board, pieces)
 
 @app.route('/')

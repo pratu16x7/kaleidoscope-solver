@@ -42,16 +42,16 @@ from puzzle import (
 
 MAX_MAGIC_WAND_INIT_EDGES = 11
 
-
-
 # TODO: First tryouts: Single Playthrough
 # TODO: Second tryouts, multiple playthroughs
 # i.e hook up all of the best possible choices at every stage to the hook
 
 class Puzzle:
-  def __init__(self):
+  def __init__(self, r_count=32, x_count=32):
     # pieces = 
-    self.pieces_registry, self.orients_registry = get_pieces()
+    self.r_count = r_count
+    self.x_count = x_count
+    self.pieces_registry, self.orients_registry = get_pieces(r_count, x_count)
     # self.orients_registry = get_orients(pieces)
     
   # get_piece('l4_left_r-0')
@@ -81,7 +81,6 @@ puzzle = Puzzle()
 
 class Solver:
   def __init__(self, board, pieces):
-    
     # TODO: place progressions inside holes themselves
     self.all_holes = get_holes_and_prog_from_grid(board['grid'])
     
@@ -442,8 +441,6 @@ def get_magic_wand_moves_for_holes(magic_wand_hole_data, state):
     coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
     move = Move(hole_id, coord, 'magic_wand', orient, get_scores(max_edge_score), state)
     valid_moves.append(move)
-    
-  print('magic_wand_hole_data', [e['idx'] for e in magic_wand_hole_data])
   
   for data in magic_wand_hole_data:
     grid = data['grid']
@@ -470,12 +467,8 @@ def fill_piece(hole, piece, orient_id, window_coord_pair, open_edges):
     
     for coord_t in cell_coord_list:
       cy, cx = int(coord_t[0]), int(coord_t[1])
-
-      print('cy,cx | wy, wx', cy, cx, wy, wx)
       
       y, x = wy + cy, wx + cx
-      
-      print('y x', y, x)
       
       filled_cell = changed_hole[y][x]
       changed_hole[y][x] = None

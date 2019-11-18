@@ -72,7 +72,7 @@ SMALL_HOLE_SIZE = 12
 AVG_WIN_SIZE = 6
 
 
-def get_pieces():
+def get_pieces(red_count, black_count):
   pieces_reg = {}
   orients_reg = {}
   for p in PIECES:
@@ -99,14 +99,23 @@ def get_pieces():
         ]
     else:
       if name == 'mono_r':
+        # if black_count > red_count:
         grid = copy.deepcopy(piece['grid'])
-        
+      
         grid[0][0]['color'] = 'x'
-        
+      
         orients.append({
           'grid': grid,
           'cell_coord_list': ['00x']
         })
+
+        piece['positions'] = 2
+      
+        # orients = {
+        #   'grid': grid,
+        #   'cell_coord_list': ['00x']
+        # }
+
     
     pieces_reg[name] = piece
     orients_reg[name] = orients
