@@ -194,8 +194,11 @@ class State:
       
     self.sort_holes()
     hole = self.holes[0]
+    grid = hole['grid']
+    # next_count = min(hole['progression'][0], get_cell_count(grid))
     next_count = hole['progression'][0]
-    moves = get_possible_moves(hole['grid'], 0, self.pieces, next_count)
+    print('======next_count', next_count)
+    moves = get_possible_moves(grid, 0, self.pieces, next_count)
     
     if not moves and next_count == 3:
       hole['progression'].pop(0)
@@ -434,8 +437,13 @@ def get_magic_wand_moves_for_holes(magic_wand_hole_data, state):
     cell = cell_col[0]
     orient = orient_map[direction + cell['color']]
     max_edge_score = sum([c['edges'].count('1') for c in cell_col])
-    move = Move(hole_id, cell['coord_pair'], 'magic_wand', orient, get_scores(max_edge_score), state)
+    
+    # TODO: Another rel_coord
+    coord = cell['rel_coord_pair'] if 'rel_coord_pair' in cell else cell['coord_pair']
+    move = Move(hole_id, coord, 'magic_wand', orient, get_scores(max_edge_score), state)
     valid_moves.append(move)
+    
+  print('magic_wand_hole_data', [e['idx'] for e in magic_wand_hole_data])
   
   for data in magic_wand_hole_data:
     grid = data['grid']
@@ -452,17 +460,22 @@ def get_magic_wand_moves_for_holes(magic_wand_hole_data, state):
       
     
 
-def fill_piece(hole, piece, orient, window_coord_pair, open_edges):
+def fill_piece(hole, piece, orient_id, window_coord_pair, open_edges):
     changed_hole = copy.deepcopy(hole)
     wy, wx = window_coord_pair
     
-    orient = puzzle.get_piece(piece, orient)
+    orient = puzzle.get_piece(piece, orient_id)
     cell_coord_list = orient['cell_coord_list']
     grid = orient['grid']
     
     for coord_t in cell_coord_list:
       cy, cx = int(coord_t[0]), int(coord_t[1])
+
+      print('cy,cx | wy, wx', cy, cx, wy, wx)
+      
       y, x = wy + cy, wx + cx
+      
+      print('y x', y, x)
       
       filled_cell = changed_hole[y][x]
       changed_hole[y][x] = None

@@ -97,6 +97,16 @@ def get_pieces():
           r180,
           get_rotated(r180, 90)
         ]
+    else:
+      if name == 'mono_r':
+        grid = copy.deepcopy(piece['grid'])
+        
+        grid[0][0]['color'] = 'x'
+        
+        orients.append({
+          'grid': grid,
+          'cell_coord_list': ['00x']
+        })
     
     pieces_reg[name] = piece
     orients_reg[name] = orients
