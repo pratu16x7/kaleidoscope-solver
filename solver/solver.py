@@ -34,6 +34,7 @@ from puzzle import (
   get_piece_to_window_edge_scores, 
   get_edge_matches_total_score,
   get_cell_count, 
+  get_edge_count,
   DIR_OPS,
   DIR_REVS,
   SMALL_HOLE_SIZE,
@@ -41,6 +42,22 @@ from puzzle import (
 )
 
 MAX_MAGIC_WAND_INIT_EDGES = 11
+
+def sort_holes(holes):
+  # TODO: we'll sort better later
+  # TODO: size property is not changed yet when we remove the progression
+
+  # for hole in holes:
+  #   hole['size'] = get_cell_count(hole['grid'])
+  #   hole['edge_count'] = get_edge_count(hole['grid'])
+  # holes.sort(key=lambda x: x['edge_count'], reverse=True)
+  # holes.sort(key=lambda x: x['size'])
+  
+  small_holes = [hole for hole in holes if hole['size'] <= 4]
+  big_holes = [hole for hole in holes if hole['size'] > 4]
+  holes = sorted(small_holes, key=lambda x: x['size']) + sorted(big_holes, key=lambda x: x['density'])
+  return holes
+
 
 # TODO: First tryouts: Single Playthrough
 # TODO: Second tryouts, multiple playthroughs
@@ -80,6 +97,8 @@ class Solver:
   def __init__(self, board, pieces, puzzle):
     # TODO: place progressions inside holes themselves
     self.all_holes = get_holes_and_prog_from_grid(board['grid'])
+    
+    self.all_holes = sort_holes(self.all_holes)
     
     # LATER: and probably also fill in the unquestionables to avoid questioning them in future 
     self.state = State(
@@ -190,19 +209,37 @@ class State:
     if 'magic_wand' in self.pieces:
       return self.get_magic_wand_moves()
       
-    self.sort_holes()
-    hole = self.holes[0]
+    sort_holes(self.holes)
+    hole_id = 0
+    hole = self.holes[hole_id]
     grid = hole['grid']
     # next_count = min(hole['progression'][0], get_cell_count(grid))
     print('======next_counts', hole['progression'])
     next_count = hole['progression'][0]
-    moves = get_possible_moves(grid, 0, self.pieces, self.puzzle, next_count)
+    moves = get_possible_moves(grid, hole_id, self.pieces, self.puzzle, next_count)
     
     if not moves and next_count == 3:
       hole['progression'].pop(0)
       hole['progression'] = [2, 1] + hole['progression']
       next_count = hole['progression'][0]
-      moves = get_possible_moves(hole['grid'], 0, self.pieces, self.puzzle, next_count)
+      moves = get_possible_moves(hole['grid'], hole_id, self.pieces, self.puzzle, next_count)
+     
+    # TODO: 
+    # if not moves and len(self.holes) > 1:
+    #   hole_id += 1
+    #   hole = self.holes[hole_id]
+    #   grid = hole['grid']
+    #   # next_count = min(hole['progression'][0], get_cell_count(grid))
+    #   print('====++==next_counts', hole['progression'])
+    #   next_count = hole['progression'][0]
+    #   moves = get_possible_moves(grid, hole_id, self.pieces, self.puzzle, next_count)
+    #
+    #   if not moves and next_count == 3:
+    #     hole['progression'].pop(0)
+    #     hole['progression'] = [2, 1] + hole['progression']
+    #     next_count = hole['progression'][0]
+    #     moves = get_possible_moves(hole['grid'], hole_id, self.pieces, self.puzzle, next_count)
+      
       
     # TODO: Way to try multiple progression chains
     
@@ -211,13 +248,7 @@ class State:
     
     return moves
     
-  def sort_holes(self):
-    # TODO: we'll sort better later
-    # TODO: size property is not changed yet when we remove the progression
-    # small_holes = [hole for hole in self.holes if hole['size'] <= SMALL_HOLE_SIZE]
-#     big_holes = [hole for hole in self.holes if hole['size'] > SMALL_HOLE_SIZE]
-#     self.holes = sorted(small_holes, key=lambda x: x['size']) + sorted(big_holes, key=lambda x: x['density'])
-    pass
+
     
   def possible_moves_over(self):
     return self.current_move_idx == len(self.possible_moves) - 1
@@ -264,6 +295,9 @@ class Move:
     self.open_edges = open_edges
     
   def get_filled_hole_grid(self):
+    print(self.hole_id, self.piece,
+      self.orient,
+      self.coord)
     now_filled_hole = fill_piece(
       self.get_hole_grid(),
       self.piece,
@@ -412,7 +446,7 @@ def get_possible_moves(hole_grid, hole_id, available_pieces, puzzle, next_expect
   selected_moves = sorted(all_possible_moves, key=lambda x: x.scores['win_c'] + x.scores['match_c'], reverse=True)[:6]
   moves = sorted(selected_moves, key=lambda x: x.scores['total'], reverse=True)
   
-  return moves[:2]
+  return moves[:3]
   
 
   
@@ -495,7 +529,7 @@ def get_magic_wand_moves_for_holes(magic_wand_hole_data, state):
       if None not in col:
         append_move(data['idx'], col, 'v')
         
-  return valid_moves
+  return sorted(valid_moves, key=lambda x: x.scores['total'], reverse=True)
       
     
 
@@ -506,7 +540,7 @@ def fill_piece(hole, piece, orient_id, window_coord_pair, open_edges, puzzle):
     orient = puzzle.get_piece(piece, orient_id)
     cell_coord_list = orient['cell_coord_list']
     grid = orient['grid']
-    
+
     for coord_t in cell_coord_list:
       cy, cx = int(coord_t[0]), int(coord_t[1])
       

@@ -419,6 +419,14 @@ def get_cell_count(this_hole):
       if cell:
         size += 1
   return size
+  
+def get_edge_count(this_hole):
+  edge_count = 0
+  for row in this_hole:
+    for cell in row:
+      if cell:
+        edge_count += cell['edges'].count('1')
+  return edge_count
 
 
 
