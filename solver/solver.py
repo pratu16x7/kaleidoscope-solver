@@ -223,6 +223,11 @@ class State:
       hole['progression'] = [2, 1] + hole['progression']
       next_count = hole['progression'][0]
       moves = get_possible_moves(hole['grid'], hole_id, self.pieces, self.puzzle, next_count)
+      
+    if not moves and sum(hole['progression']) == 8 and next_count == 4:
+      hole['progression'] = [3, 3, 2]
+      next_count = hole['progression'][0]
+      moves = get_possible_moves(hole['grid'], hole_id, self.pieces, self.puzzle, next_count)
      
     # TODO: 
     # if not moves and len(self.holes) > 1:
