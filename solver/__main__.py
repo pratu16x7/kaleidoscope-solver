@@ -29,7 +29,7 @@ puzzle = Puzzle(board['red_count'], board['black_count'])
 app.jinja_env.globals.update(get_piece=puzzle.get_piece)
 
 pieces = list(puzzle.get_pieces())
-solver = Solver(board, pieces)
+solver = Solver(board, pieces, puzzle)
 
 @app.route('/')
 def home():

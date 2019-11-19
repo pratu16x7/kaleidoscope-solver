@@ -76,17 +76,14 @@ class Puzzle:
       names = self.get_pieces()
     return [self.get_orients(name) for name in names]
 
-
-puzzle = Puzzle()
-
 class Solver:
-  def __init__(self, board, pieces):
+  def __init__(self, board, pieces, puzzle):
     # TODO: place progressions inside holes themselves
     self.all_holes = get_holes_and_prog_from_grid(board['grid'])
     
     # LATER: and probably also fill in the unquestionables to avoid questioning them in future 
     self.state = State(
-      # self,
+      puzzle,
       copy.deepcopy(self.all_holes), 
       pieces,
       None
@@ -120,7 +117,9 @@ class Solver:
 # There's multiple Moves for very State
 # A State saves a COPY the ENTIRE BOARD data within itself
 class State:
-  def __init__(self, holes, pieces, parent):
+  def __init__(self, puzzle, holes, pieces, parent):
+    self.puzzle = puzzle
+    
     self.holes = holes
     self.pieces = pieces
     self.curr_hole_idx = 0
@@ -161,7 +160,7 @@ class State:
     move.old_grid = self.holes[move.hole_id]['grid']
     move.new_grid = now_filled_hole_grid
     
-    pieces = self.pieces[:]
+    pieces = copy.deepcopy(self.pieces)
     pieces.remove(move.piece)
     
     all_holes = copy.deepcopy(self.holes)
@@ -170,7 +169,7 @@ class State:
       all_holes.pop(move.hole_id)
       # TODO: change progression if only one hole left
       if len(all_holes) == 1:
-        all_holes[0]['progression'] = get_pieces_progression(pieces)
+        all_holes[0]['progression'] = get_pieces_progression(pieces, self.puzzle)
     else:
       curr_hole = all_holes[move.hole_id]
       curr_hole['grid'] = now_filled_hole_grid
@@ -178,7 +177,7 @@ class State:
       curr_hole['progression'].pop(0)
     
     print('=====Start new_state: pieces', pieces, )
-    return [State( all_holes, pieces, self ), move]
+    return [State( self.puzzle, all_holes, pieces, self ), move]
     
   def get_moves(self):
     # Make move objects. Account for all the special pieces that you have
@@ -195,15 +194,17 @@ class State:
     hole = self.holes[0]
     grid = hole['grid']
     # next_count = min(hole['progression'][0], get_cell_count(grid))
+    print('======next_counts', hole['progression'])
     next_count = hole['progression'][0]
-    print('======next_count', next_count)
-    moves = get_possible_moves(grid, 0, self.pieces, next_count)
+    moves = get_possible_moves(grid, 0, self.pieces, self.puzzle, next_count)
     
     if not moves and next_count == 3:
       hole['progression'].pop(0)
       hole['progression'] = [2, 1] + hole['progression']
       next_count = hole['progression'][0]
-      moves = get_possible_moves(hole['grid'], 0, self.pieces, next_count)
+      moves = get_possible_moves(hole['grid'], 0, self.pieces, self.puzzle, next_count)
+      
+    # TODO: Way to try multiple progression chains
     
     for move in moves:
       move.state = self
@@ -268,7 +269,8 @@ class Move:
       self.piece,
       self.orient,
       self.coord,
-      None
+      None,
+      self.state.puzzle
     )
     
     return now_filled_hole
@@ -281,7 +283,7 @@ class Move:
 
 
 
-def get_possible_moves(hole_grid, hole_id, available_pieces, next_expected_count=4):
+def get_possible_moves(hole_grid, hole_id, available_pieces, puzzle, next_expected_count=4):
   all_possible_moves = []
   
   windows = get_valid_windows(hole_grid, next_expected_count) 
@@ -293,7 +295,44 @@ def get_possible_moves(hole_grid, hole_id, available_pieces, next_expected_count
     window_id = coord + str(dim[0]) + str(dim[1])
     
     window, cell_coord_list = get_window_and_cell_coord_list(hole_grid, y, x, h, w) 
-    possible_moves = get_possible_moves_having_count_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, hole_id, [y, x])
+    
+    if no_of_cells == 1:
+      term = cell_coord_list[0]
+      color = term[-1]
+      cy, cx = int(term[0]), int(term[1])
+      scores = {
+        'match_c': 4,
+        'win_c': 4,
+        'piece_c': 4,
+        'deviation': 0,
+        'span': 0,
+        'total': get_edge_matches_total_score(4, 4, 4)
+      }
+      
+      name = None
+      if color == 'r':
+        if 'mono_r' in available_pieces and not puzzle.get_piece_info('mono_r')['flipped']:
+          name = 'mono_r'
+      else:
+        if 'mono_x' in available_pieces:
+          name = 'mono_x'
+        else:
+          if 'mono_r' in available_pieces and puzzle.get_piece_info('mono_r')['flipped']:
+            name = 'mono_r'
+      
+      if name:
+        orient = 0
+        move = Move(hole_id, [y + cy, x + cx], name, orient, scores, None)
+        all_possible_moves.append(move)
+      continue
+      
+    # elif no_of_cells == 2:
+    #   move = Move(hole_id, [y + cy, x + cx], name, orient, scores, None)
+    #   all_possible_moves.append(move)
+    #   continue
+    
+    
+    possible_moves = get_possible_moves_having_count_with_scores(available_pieces, puzzle, window, cell_coord_list, no_of_cells, next_expected_count, hole_id, [y, x])
     
     if 'square' in available_pieces and next_expected_count == 4:
       cell_only_coord_list = [cell[:2] for cell in cell_coord_list]
@@ -357,6 +396,9 @@ def get_possible_moves(hole_grid, hole_id, available_pieces, next_expected_count
         possible_moves += [move]
       
     # TODO: also do for monomino: red and black
+    
+    # if 'square' in available_pieces and next_expected_count == 4:
+    
       
     all_possible_moves += possible_moves
     
@@ -365,7 +407,7 @@ def get_possible_moves(hole_grid, hole_id, available_pieces, next_expected_count
   if 'small_wand' in available_pieces and next_expected_count == 4:
     all_possible_moves += get_small_wand_moves(hole_grid, hole_id) 
   
-  print('=====all_possible_moves', len(all_possible_moves))
+  print('=====all_possible_moves', len(all_possible_moves), [move.piece for move in all_possible_moves], next_expected_count)
     
   selected_moves = sorted(all_possible_moves, key=lambda x: x.scores['win_c'] + x.scores['match_c'], reverse=True)[:6]
   moves = sorted(selected_moves, key=lambda x: x.scores['total'], reverse=True)
@@ -457,7 +499,7 @@ def get_magic_wand_moves_for_holes(magic_wand_hole_data, state):
       
     
 
-def fill_piece(hole, piece, orient_id, window_coord_pair, open_edges):
+def fill_piece(hole, piece, orient_id, window_coord_pair, open_edges, puzzle):
     changed_hole = copy.deepcopy(hole)
     wy, wx = window_coord_pair
     
@@ -522,7 +564,7 @@ def get_window_and_cell_coord_list(hole, y, x, h, w):
     
   return window, cell_coord_list 
     
-def get_possible_moves_having_count_with_scores(available_pieces, window, cell_coord_list, no_of_cells, next_expected_count, hole_id, coord_pair):
+def get_possible_moves_having_count_with_scores(available_pieces, puzzle, window, cell_coord_list, no_of_cells, next_expected_count, hole_id, coord_pair):
   possible_moves = []
   for name in available_pieces:
     info = puzzle.get_piece_info(name)
@@ -555,7 +597,7 @@ def get_possible_moves_having_count_with_scores(available_pieces, window, cell_c
            
   return possible_moves
   
-def get_pieces_progression(pieces):
+def get_pieces_progression(pieces, puzzle):
   progression = []
   for piece in pieces:
     piece_info = puzzle.get_piece_info(piece)

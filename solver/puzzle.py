@@ -81,6 +81,8 @@ def get_pieces(red_count, black_count):
     piece['name'] = name
     pos = p['positions'] if 'positions' in p.keys() else 4
     piece['positions'] = pos
+    
+    piece['flipped'] = False
   
     orients = [{
       'grid': piece['grid'],
@@ -99,23 +101,24 @@ def get_pieces(red_count, black_count):
         ]
     else:
       if name == 'mono_r':
-        # if black_count > red_count:
-        grid = copy.deepcopy(piece['grid'])
-      
-        grid[0][0]['color'] = 'x'
-      
-        orients.append({
-          'grid': grid,
-          'cell_coord_list': ['00x']
-        })
+        if black_count > red_count:
+          grid = copy.deepcopy(piece['grid'])
 
-        piece['positions'] = 2
-      
-        # orients = {
+          grid[0][0]['color'] = 'x'
+          orients = [{
+            'grid': grid,
+            'cell_coord_list': ['00x']
+          }]
+          
+          piece['flipped'] = True
+          
+        
+        # orients.append({
         #   'grid': grid,
         #   'cell_coord_list': ['00x']
-        # }
-
+        # })
+        #
+        # piece['positions'] = 2
     
     pieces_reg[name] = piece
     orients_reg[name] = orients
@@ -142,12 +145,15 @@ def get_piece_size_progression(cell_count):
     piece_size_progression = [4] * int(cell_count/4)
   elif cell_count % 2 == 0:
     if cell_count > 2:
-      # has a 6 in there, first choice 3 + 3, rather than 4 + 2
+      # has a last 6 in there, first choice 3 + 3, rather than 4 + 2
       mult_4 = cell_count - 6
       piece_size_progression = [4] * int(mult_4/4) + [3, 3]
     else:
       # 2, then 1 + 1
       piece_size_progression = [2]
+  # elif cell_count % 4 == 1 and cell_count > 1:
+  #   # has a last 5 in there, first choice 3 + 2, then 4 + 1
+  #   piece_size_progression = [4] * (int(cell_count/4)-1) + [3, 2]
       
   else:
     # odd
@@ -991,11 +997,12 @@ def get_cell_sums_wide(hori_cell_2_grads, count_window_distribution, h, w):
     for j in range(w - WINDOW_DIMS['h'][1] + 1):
       this_sum = hori_cell_2_grads[i][j] + hori_cell_2_grads[i][j+1] + hori_cell_2_grads[i][j+2]
       
-      window = [str(i) + str(j), WINDOW_DIMS['h'], this_sum]
-      if this_sum not in count_window_distribution:
-        count_window_distribution[this_sum] = [window]
-      else:
-        count_window_distribution[this_sum].append(window)
+      if this_sum:
+        window = [str(i) + str(j), WINDOW_DIMS['h'], this_sum]
+        if this_sum not in count_window_distribution:
+          count_window_distribution[this_sum] = [window]
+        else:
+          count_window_distribution[this_sum].append(window)
         
       grad_wide_sums.append(this_sum)
       
@@ -1012,11 +1019,12 @@ def get_cell_sums_long(hori_cell_3_grads, count_window_distribution, h, w):
     for j in range(w - WINDOW_DIMS['v'][1] + 1):
       this_sum = hori_cell_3_grads[i][j] + hori_cell_3_grads[i][j+1]
       
-      window = [str(i) + str(j), WINDOW_DIMS['v'], this_sum]
-      if this_sum not in count_window_distribution:
-        count_window_distribution[this_sum] = [window]
-      else:
-        count_window_distribution[this_sum].append(window)
+      if this_sum:
+        window = [str(i) + str(j), WINDOW_DIMS['v'], this_sum]
+        if this_sum not in count_window_distribution:
+          count_window_distribution[this_sum] = [window]
+        else:
+          count_window_distribution[this_sum].append(window)
       
       grad_long_sums.append(this_sum)
       
@@ -1033,6 +1041,10 @@ def get_windows_by_count_window_distribution(count_window_distribution, count_cu
       windows = list(cwd.values())[0]
     else:
       sizes = sorted(cwd.keys(), reverse=True)
+      
+      # remove 1 celled window if bigger windows available
+      if 1 in sizes and len(sizes) >= 2:
+        sizes = sizes[:-1]
       
       # atleast 3 kinds of sizes (counts)
       

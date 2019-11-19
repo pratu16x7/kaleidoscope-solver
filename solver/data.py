@@ -104,18 +104,14 @@ PIECES = [
   },
   
   # # monominoes (singletons)
-  # TODO: currently put mono_r later to be able to solve boards
-  # as mono_r has 2 position when black count is 33 and red count is 31
-  # However permanent solution is a global puzzle state that know the counts
-  # and has then set the pieces with their respective suitable positions
-  {
-    'name': 'mono_x',
-    'val': '00x',
-    'positions': 1
-  },
   {
     'name': 'mono_r',
     'val': '00r',
     'positions': 1
   },
+  {
+    'name': 'mono_x',
+    'val': '00x',
+    'positions': 1
+  }
 ]

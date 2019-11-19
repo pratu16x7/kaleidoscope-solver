@@ -94,7 +94,7 @@ def get_pattern_img():
   # img = cv2.imread('./images/periscope.jpg', 0)
   # img = cv2.imread('./images/greek_temple.jpg', 0)
   # img = cv2.imread('./images/crossroads.jpg', 0)
-  # img = cv2.imread('./images/no_single_squares.jpg', 0)
+  img = cv2.imread('./images/no_single_squares.jpg', 0)
   img = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
 
   h, w = img.shape[:2]
