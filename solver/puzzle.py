@@ -452,7 +452,7 @@ CELL_SIZE = 16
 CELLS_SIDE = 8
 GRID_AREA = 64
 
-def get_board_from_img(img, thresh):
+def get_board_from_img(img, thresh, edges=True):
   # with all the edges, counts, holes, hole sizes, hole start zones, checkered index
   
   start_point = CELL_SIZE / 2
@@ -478,8 +478,9 @@ def get_board_from_img(img, thresh):
         'color': val
       })
     grid.append(row)
-
-  grid = add_edges_to_grid_data(grid)
+  
+  if edges:
+    grid = add_edges_to_grid_data(grid)
 
   
      

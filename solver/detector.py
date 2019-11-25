@@ -83,12 +83,12 @@ def get_intersection(line1, line2):
 
 
 def get_pattern_img():
-  img = cv2.imread('./images/97_1.jpg', 0)
+  # img = cv2.imread('./images/97_1.jpg', 0)
   # img = cv2.imread('./images/45_2.jpg', 0)
   # img = cv2.imread('./images/61_2.jpg', 0)
   # img = cv2.imread('./images/65_2.jpg', 0)
   # img = cv2.imread('./images/6_1.jpg', 0)
-  # img = cv2.imread('./images/18_1.jpg', 0)
+  img = cv2.imread('./images/18_1.jpg', 0)
   # img = cv2.imread('./images/van.jpg', 0)
   img = cv2.imread('./images/car.jpg', 0)
   # img = cv2.imread('./images/periscope.jpg', 0)

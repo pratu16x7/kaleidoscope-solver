@@ -1,6 +1,6 @@
 body {
-  background-color: #394449;
-  color: #fff;
+  background-color: #fff;
+  color: #394449;
   font-family: sans-serif;
 }
 
@@ -50,7 +50,12 @@ body {
 
 .grid-cell.white {
   background-color: #FFF;
-  border: 2px solid #FFF;
+  border: 2px solid #DDD;
+}
+
+.grid-cell.transparent {
+  background-color: rgba(0,0,0,0);
+  border: 2px solid rgba(0,0,0,0);
 }
 
 .grid-cell.pink {

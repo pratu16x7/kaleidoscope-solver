@@ -24,6 +24,7 @@ pattern_img = get_pattern_img()
 # TODO: get only the string of the board from img,
 # do everything else via the solver
 board = get_board_from_img(pattern_img, get_black_thresh())
+raw_board = get_board_from_img(pattern_img, get_black_thresh(), False)
 
 puzzle = Puzzle(board['red_count'], board['black_count'])
 app.jinja_env.globals.update(get_piece=puzzle.get_piece)
@@ -34,6 +35,7 @@ solver = Solver(board, pieces, puzzle)
 @app.route('/')
 def home():
   return render_template('home.html', 
+    raw_board=raw_board['grid'],
     data=board, 
     holes=solver.all_holes, 
     piece_sets=puzzle.get_piece_sets()

@@ -1,22 +1,22 @@
-{% macro grid_pattern(grid, classname, small) -%}
+{% macro grid_pattern(grid, classname, small=False, back=True, edges=True, coord=True) -%}
   <div class="grid {% if small %} grid-small {% endif %} {{classname}}">
     {% for row in grid %}
     <div class="grid-row">
       {% for cell in row %}
       <div class="grid-cell 
-        {% if cell == None %} white 
+        {% if cell == None %} {% if back %} white {% else %} transparent {% endif %}
         {% elif cell['color'] == 'r' %} red 
         {% else %} black 
         {% endif %}
         
-        {% if cell %}
+        {% if edges and not small and cell and cell['edges'] %}
           {% if cell['edges'][0] == '1' %} up {% endif %}
           {% if cell['edges'][1] == '1' %} left {% endif %}
           {% if cell['edges'][2] == '1' %} down {% endif %}
           {% if cell['edges'][3] == '1' %} right {% endif %}
         {% endif %}
         "> 
-        {% if not small %}
+        {% if coord and not small %}
           {% if cell.rel_coord is defined %}
             {{ cell['rel_coord'] }}
           {% else %}
@@ -38,7 +38,7 @@
       {% for cell in row %}
       {% set eaten_up = new_grid[outer_loop.index - 1][loop.index - 1] == None %}
       <div class="grid-cell 
-        {% if cell == None %} white 
+        {% if cell == None %} white
         {% elif cell['color'] == 'r' %} {% if eaten_up %} light_red {% else %} red {% endif %} 
         {% else %} {% if eaten_up %} grey {% else %} black {% endif %}  
         {% endif %}

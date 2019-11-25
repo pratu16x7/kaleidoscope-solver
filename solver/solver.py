@@ -300,9 +300,6 @@ class Move:
     self.open_edges = open_edges
     
   def get_filled_hole_grid(self):
-    print(self.hole_id, self.piece,
-      self.orient,
-      self.coord)
     now_filled_hole = fill_piece(
       self.get_hole_grid(),
       self.piece,
