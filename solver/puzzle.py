@@ -71,6 +71,8 @@ SMALL_HOLE_SIZE = 12
 
 AVG_WIN_SIZE = 6
 
+DEVIATE_INCR = 0.26
+
 
 def get_pieces(red_count, black_count):
   pieces_reg = {}
@@ -81,6 +83,8 @@ def get_pieces(red_count, black_count):
     piece['name'] = name
     pos = p['positions'] if 'positions' in p.keys() else 4
     piece['positions'] = pos
+    
+    piece['deviation'] = get_total_deviation_score(piece['grid'])
     
     piece['flipped'] = False
   
@@ -202,6 +206,29 @@ def get_edge_matches_total_score(match_count, win_edge_count, piece_edge_count):
   # return round((match_count/win_edge_count)*(match_count/piece_edge_count) * 10, 2) + win_edge_count/2
   # return round((match_count/win_edge_count) * 10, 2) + win_edge_count/2
   return match_count + win_edge_count/2
+  
+  
+def get_total_deviation_score(piece_grid):
+  total_deviation_score = 0
+  if len(piece_grid) > 1:
+      total_deviation_score += 1
+      
+      none_row = None
+      highly_crooked = False # All are none rows
+      for row in piece_grid:
+          if None in row:
+              if not none_row:
+                  none_row = row
+              else:
+                  highly_crooked = True
+      
+      if highly_crooked:
+          total_deviation_score += 2 
+      elif none_row:
+          if none_row[0] is None and none_row[-1] is None:
+              total_deviation_score += 1
+              
+  return total_deviation_score
   
   
 def get_long_windows(patt):

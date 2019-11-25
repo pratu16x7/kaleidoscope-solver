@@ -32,13 +32,31 @@ app.jinja_env.globals.update(get_piece=puzzle.get_piece)
 pieces = list(puzzle.get_pieces())
 solver = Solver(board, pieces, puzzle)
 
+# piece_sets = puzzle.get_piece_sets()
+
+pieces_registry = puzzle.get_pieces_registry()
+
+pieces_map = {}
+for name, piece in pieces_registry.items():
+  size = piece['size']
+  name = piece['name']
+  dev = piece['deviation']
+  
+  if size not in pieces_map:
+    pieces_map[size] = {}
+  
+  if dev not in pieces_map[size]:
+    pieces_map[size][dev] = [name]
+  else:
+    pieces_map[size][dev].append(name)
+
 @app.route('/')
 def home():
   return render_template('home.html', 
     raw_board=raw_board['grid'],
     data=board, 
     holes=solver.all_holes, 
-    piece_sets=puzzle.get_piece_sets()
+    pieces_map=pieces_map
   )
 
 @app.route('/get_next_move')
@@ -49,8 +67,6 @@ def get_next_move():
     return {
       'state': move
     }
-  
-  print(move)
       
   # TODO: macro doesn't take some keys
   move_template = move_macro(**(move.__dict__)) 

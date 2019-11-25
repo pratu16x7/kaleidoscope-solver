@@ -38,7 +38,8 @@ from puzzle import (
   DIR_OPS,
   DIR_REVS,
   SMALL_HOLE_SIZE,
-  AVG_WIN_SIZE
+  AVG_WIN_SIZE,
+  DEVIATE_INCR
 )
 
 MAX_MAGIC_WAND_INIT_EDGES = 11
@@ -87,6 +88,9 @@ class Puzzle:
     
   def get_pieces(self):
     return self.pieces_registry.keys()
+    
+  def get_pieces_registry(self):
+    return self.pieces_registry
     
   def get_piece_sets(self, names=[]):
     if not names:
@@ -618,7 +622,7 @@ def get_possible_moves_having_count_with_scores(available_pieces, puzzle, window
            piece_grid = orient['grid']
            match_c, win_c, piece_c, open_edges = get_piece_to_window_edge_scores(piece_grid, window)
 
-           total_deviation_score = get_total_deviation_score(primary_orient['grid'])
+           total_deviation_score = info['deviation'] * DEVIATE_INCR
            scores = {
              'match_c': match_c,
              'win_c': win_c,
@@ -639,26 +643,3 @@ def get_pieces_progression(pieces, puzzle):
     piece_info = puzzle.get_piece_info(piece)
     progression.append(piece_info['size'])
   return progression
-
-def get_total_deviation_score(piece_grid):
-  DEVIATE_INCR = 0.26
-  total_deviation_score = 0
-  if len(piece_grid) > 1:
-      total_deviation_score += DEVIATE_INCR
-      
-      none_row = None
-      highly_crooked = False # All are none rows
-      for row in piece_grid:
-          if None in row:
-              if not none_row:
-                  none_row = row
-              else:
-                  highly_crooked = True
-      
-      if highly_crooked:
-          total_deviation_score += 2 * DEVIATE_INCR
-      elif none_row:
-          if none_row[0] is None and none_row[-1] is None:
-              total_deviation_score += 1 * DEVIATE_INCR
-              
-  return total_deviation_score

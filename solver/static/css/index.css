@@ -68,6 +68,12 @@ body {
 .grid-cell.down {
   border-bottom: 2px solid #0f0; }
 
+.intro {
+  height: 500px; }
+
+.piece-size {
+  margin: 24px; }
+
 .move {
   min-width: 100px; }
 

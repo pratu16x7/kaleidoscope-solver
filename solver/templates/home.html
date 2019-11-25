@@ -3,22 +3,38 @@
 {% from 'components.html' import grid_pattern %}
 
 {% block content %}
-  <h3>Board</h3>
-  {{ grid_pattern(raw_board, 'board', False, False, False, False) }}
   
-  <div class="flex">
-  {{ grid_pattern(data.grid, 'board') }}
+  
+  <div class="intro flex">
+    <div>
+      <h3>Board</h3>
+      {{ grid_pattern(raw_board, 'board', False, False, False, False) }}
+    </div>
     
     <div>
-    <h3>Pieces</h3>
-    <div class="flex">
-      
-      {% for piece_set in piece_sets %}
-        {{ grid_pattern(piece_set[0].grid, 'piece', False, False, False, False) }}
-      {% endfor %}
-    </div>
+      <h3>Pieces</h3>
+      <div class="">
+        
+        {% for size in pieces_map %}
+          <div class="piece-size">
+            {% for dev in pieces_map[size] %}
+          
+              <div class="flex">
+              {% for piece in pieces_map[size][dev] %}
+                {{ grid_pattern(get_piece(piece, 0)['grid'], 'piece', False, False, False, False) }}
+              {% endfor %}
+              </div>
+          
+            {% endfor %}
+        
+          </div>
+        {% endfor %}
+        
+      </div>
     </div>
   </div>
+  
+  {{ grid_pattern(data.grid, 'board') }}
   
   <h3>Data</h3>
   <div class="data">
