@@ -105,11 +105,12 @@ class Solver:
     self.all_holes = sort_holes(self.all_holes)
     
     # LATER: and probably also fill in the unquestionables to avoid questioning them in future 
+    
     self.state = State(
       puzzle,
       copy.deepcopy(self.all_holes), 
       pieces,
-      None
+      None,
     )
 
   def get_next_move(self):
@@ -216,6 +217,7 @@ class State:
     sort_holes(self.holes)
     hole_id = 0
     hole = self.holes[hole_id]
+    
     grid = hole['grid']
     # next_count = min(hole['progression'][0], get_cell_count(grid))
     print('======next_counts', hole['progression'])
@@ -319,6 +321,7 @@ class Move:
   #   return puzzle.get_piece(self.piece, self.orient)
     
   def get_hole_grid(self):
+    self.global_hole_id = self.state.holes[self.hole_id]['id']
     return self.state.holes[self.hole_id]['grid']
 
 

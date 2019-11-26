@@ -17,10 +17,10 @@
       }).then(move => {
         const d = document.createElement('div')
         if (!move.message && move.state) {
-          d.innerHTML = move.state + '!'
+          d.innerHTML = move.state + '!' + move.board
           document.getElementById('moves').append(d)
         } else {
-          d.innerHTML = move.message
+          d.innerHTML = move.message + move.board
           document.getElementById('moves').append(d)
         }
       })

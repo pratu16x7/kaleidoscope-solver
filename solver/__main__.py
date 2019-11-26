@@ -16,7 +16,7 @@
 from flask import Flask, render_template, get_template_attribute
 from solver import Puzzle, Solver
 from detector import get_pattern_img, get_black_thresh
-from puzzle import get_board_from_img
+from puzzle import get_board_from_img, add_piece_edges_to_grid
 
 app = Flask(__name__)
 
@@ -49,30 +49,47 @@ for name, piece in pieces_registry.items():
     pieces_map[size][dev] = [name]
   else:
     pieces_map[size][dev].append(name)
+    
+    
+moves = []
 
 @app.route('/')
 def home():
   return render_template('home.html', 
-    raw_board=raw_board['grid'],
+    raw_board=raw_board,
     data=board, 
     holes=solver.all_holes, 
     pieces_map=pieces_map
   )
+  
+board_grid = board['grid']
 
 @app.route('/get_next_move')
 def get_next_move():
-  move_macro = get_template_attribute('components.html', 'move')
+  grid_macro = get_template_attribute('components.html', 'grid_pattern')
+  board_template = grid_macro(board_grid, 'board') 
+  
   move = solver.get_next_move()
   if type(move) == str:
+    
     return {
-      'state': move
+      'state': move, 
+      'board': board_template
     }
       
   # TODO: macro doesn't take some keys
+  move_macro = get_template_attribute('components.html', 'move')
   move_template = move_macro(**(move.__dict__)) 
+  
+  moves.append(move)
+  
+  the_hole = [hole for hole in solver.all_holes if hole['id'] == move.global_hole_id][0]
+  add_piece_edges_to_grid(board_grid, puzzle.get_piece(move.piece, move.orient), move.coord, the_hole['offset'])
+  
   return {
     'message': move_template,
-    'solved': solver.state.solved
+    'solved': solver.state.solved,
+    'board': board_template
   }
   
 if __name__ == "__main__":

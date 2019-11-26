@@ -80,7 +80,7 @@
   </div>
 {%- endmacro %}
 
-{% macro move(coord, piece, orient, hole_id, scores, old_grid, new_grid, state, open_edges) -%}
+{% macro move(coord, piece, orient, hole_id, scores, old_grid, new_grid, state, open_edges, global_hole_id) -%}
   <div class="move flex">
     
     {# coord, hole_id are implicitly shown in grid_subtraction hence not printed #}

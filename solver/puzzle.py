@@ -231,6 +231,18 @@ def get_total_deviation_score(piece_grid):
   return total_deviation_score
   
   
+def add_piece_edges_to_grid(grid, piece, coord, hole_offset = None):
+  if not hole_offset:
+    hole_offset = [0, 0]
+  for row in piece['grid']:
+    for cell in row:
+      if cell:
+        y, x = coord[0] + hole_offset[0] + cell['coord_pair'][0], coord[1] + hole_offset[1] + cell['coord_pair'][1]
+        grid[y][x]['edges'] = cell['edges']
+  return grid
+  
+  
+  
 def get_long_windows(patt):
   # edge scores first for 4 line
   # but first existence cells, for hori and vert
@@ -531,6 +543,7 @@ def get_holes_and_stats(grid):
   for key, hole in holes.items():
      obj = get_pattern_and_stats(hole['cells'])
      
+     obj['id'] = key
      obj['cells'] = hole['cells']
      holes[key] = obj
      
